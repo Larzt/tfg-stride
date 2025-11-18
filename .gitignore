@@ -1,0 +1,55 @@
+# === ESP-IDF build files ===
+build/
+sdkconfig
+sdkconfig.old
+sdkconfig.defaults
+
+# Bootloader & binaries
+*.bin
+*.elf
+*.map
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake
+
+# Ninja
+.ninja_deps
+.ninja_log
+*.ninja
+
+# Partition table
+partition_table/*.bin
+
+# Python virtual environments (si usas entorno virtual con idf.py)
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+
+# IDF Tools
+tools/
+dist/
+.espressif/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# CLion / JetBrains
+.idea/
+
+# Eclipse
+.project
+.cproject
+.settings/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
