@@ -8,9 +8,7 @@
 #include "esp_netif.h"
 #include "esp_http_server.h"
 
-#define EXAMPLE_ESP_WIFI_SSID "MiESP32AP"
-#define EXAMPLE_ESP_WIFI_PASS "12345678"
-#define EXAMPLE_MAX_STA_CONN 4
+#include "constants/credentials.h"
 
 static const char *TAG = "HTTP_SERVER";
 
@@ -43,34 +41,44 @@ httpd_handle_t start_webserver(void)
 }
 
 /* ==================== WiFi AP Init ==================== */
-void wifi_init_softap(void)
+void wifi_init_softap_sta(void)
 {
     esp_netif_create_default_wifi_ap();
+    esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    wifi_config_t wifi_config = {
+    // Configuración del AP
+    wifi_config_t wifi_ap_config = {
         .ap = {
             .ssid = EXAMPLE_ESP_WIFI_SSID,
             .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
             .channel = 1,
             .password = EXAMPLE_ESP_WIFI_PASS,
             .max_connection = EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK},
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        },
     };
 
-    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0)
-    {
-        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    }
+    // Configuración del STA
+    wifi_config_t wifi_sta_config = {
+        .sta = {
+            .ssid = LOCAL_WIFI_SSID,
+            .password = LOCAL_WIFI_PASS,
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+        },
+    };
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_sta_config));
+
     ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_connect());
 
-    ESP_LOGI(TAG, "ESP32 AP iniciado. SSID:%s  Password:%s",
-             EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+    ESP_LOGI(TAG, "Modo AP+STA iniciado");
 }
 
 /* ==================== App Main ==================== */
@@ -82,10 +90,10 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Inicializa WiFi como AP
-    wifi_init_softap();
+    wifi_init_softap_sta();
 
     // Inicia servidor HTTP
     start_webserver();
 
-    ESP_LOGI(TAG, "Servidor HTTP listo en 192.168.4.1:80");
+    ESP_LOGI(TAG, "Sistema inicializado correctamente.");
 }

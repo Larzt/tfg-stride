@@ -53,3 +53,6 @@ dist/
 
 # Windows
 Thumbs.db
+
+# Constants
+/main/constants/credentials.h
