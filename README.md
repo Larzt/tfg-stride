@@ -1,53 +1,79 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | Linux |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | ----- |
+# 📡 Servidor HTTP Modular para ESP32
 
-# Hello World Example
+Este repositorio contiene la implementación base del firmware para el **Dispositivo Modular STRIDE**, un **PROYECTO DE TRABAJO DE FIN DE GRADO (TFG)**.
 
-Starts a FreeRTOS task to print "Hello World".
+El objetivo principal es establecer una **arquitectura de software flexible** utilizando **ESP-IDF** para el microcontrolador ESP32, resolviendo la **falta de versatilidad** de los dispositivos IoT comerciales. Este núcleo central actúa como el "cerebro" del sistema, integrando conectividad **WiFi, una API y una pantalla**, permitiendo la **fácil reconfiguración** mediante módulos intercambiables.
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+## ⚙️ Características Técnicas y Funcionalidades
 
-## How to use example
+El proyecto implementa las siguientes funcionalidades iniciales:
 
-Follow detailed instructions provided specifically for this example.
+- **Arquitectura Modular:** Estructura de código pensada para ser **escalable y fácilmente mantenible**, con capas lógicas separadas (WiFi, Servidor, Controladores de Hardware).
+- **Conectividad Híbrida:** Inicialización de la interfaz WiFi en **modo AP (Access Point) + STA (Station)**.
+- **Servidor HTTP Ligero:** Servidor implementado para la interacción remota y la obtención de datos.
+- **Control de Hardware (Drivers):** Controladores separados para el hardware, como el **LED**.
 
-Select the instructions depending on Espressif chip installed on your development board:
+## 📋 API Endpoints Actuales
 
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+El servidor HTTP expone las siguientes rutas:
 
+| Método     | Ruta          | Descripción                                                                                                                                                             | Datos de Salida |
+| :--------- | :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------- |
+| `GET`      | `/`           | Página HTML de bienvenida.                                                                                                                                              | HTML            |
+| `GET`      | `/api/status` | Proporciona **información crítica del ESP32** en formato JSON, como la cantidad de **cores**, el **modelo**, la **frecuencia de la CPU** y el **estado de la memoria**. | JSON            |
+| `GET/PUTS` | `/api/led`    | Permite **alternar el estado (Toggle)** del LED conectado en el **pin GPIO 26**.                                                                                        | Estado del LED  |
 
-## Example folder contents
+## 📂 Estructura del Proyecto (Árbol de Directorios)
 
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
+El código se organiza en módulos para facilitar la escalabilidad futura del TFG:
 
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both).
+/main
+│── main.c
+│── CMakeLists.txt
 
-Below is short explanation of remaining files in the project folder.
+├── config/
+│ ├── credentials.h
+│ └── routes.h
 
+├── wifi/
+│ ├── wifi.c
+│ └── wifi.h
+
+├── server/
+│ ├── http_server.c
+│ ├── http_server.h
+│ └── handlers/
+│ ├── handler_root.c
+│ ├── handler_status.c
+│ └── handler_led.c
+
+└── drivers/
+├── led_driver.c
+└── led_driver.h
+
+## 🚀 Cómo Compilar y Flashear
+
+Este proyecto requiere el entorno de desarrollo **ESP-IDF** (Espressif IoT Development Framework).
+
+Ejecuta los siguientes comandos desde la raíz del proyecto para configurar, compilar y flashear el firmware en el ESP32:
+
+```bash
+# 1. Establece el objetivo de compilación (ej. esp32-s3 si se usa ese chip)
+idf.py set-target esp32
+
+# 2. Compila el proyecto
+idf.py build
+
+# 3. Flashea el firmware y abre el monitor serial
+# Reemplaza 'PORT' con el puerto serial de tu ESP32 y '[N]' con el baud rate (opcional)
+idf.py -p PORT -b [N] flash monitor
 ```
-├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
-├── main
-│   ├── CMakeLists.txt
-│   └── hello_world_main.c
-└── README.md                  This is the file you are currently reading
-```
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+## 📈 Desarrollo Futuro (Contexto TFG)
 
-## Troubleshooting
+La arquitectura modular implementada sienta las bases para las siguientes fases del Trabajo de Fin de Grado:
 
-* Program upload failure
-
-    * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
-    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
-
-## Technical support and feedback
-
-Please use the following feedback channels:
-
-* For technical queries, go to the [esp32.com](https://esp32.com/) forum
-* For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-idf/issues)
-
-We will get back to you as soon as possible.
+1. Integración de Módulos: Ampliación del módulo drivers/ para controlar dispositivos complejos, incluyendo la integración de sensores como el BME280 (para temperatura, presión y humedad) o el sensor de luz BH1750.
+2. Visualización: Implementación de la pantalla (posiblemente usando un driver ILI9341) para la gestión de datos y la interfaz de usuario.
+3. Almacenamiento Local: Integración de la ranura SD utilizando un breakout board de tarjeta Micro SD para el registro de datos (datalogging).
+4. Casos de Uso de Validación: Programación de la lógica de aplicación para escenarios de cultivos hidropónicos (sensores de pH, conductividad, temperatura) y aplicaciones de senderismo (geolocalización, altímetro, brújula digital o sensores de condiciones ambientales).

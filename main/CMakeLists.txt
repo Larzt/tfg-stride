@@ -1,6 +1,29 @@
 idf_component_register(
-    SRCS "wifi/wifi.c" "main.c" "server/server.c"
-    INCLUDE_DIRS "."
+    SRCS
+        "main.c"
+        "constants.c"
+
+        # Carpetas del proyecto
+        "wifi/wifi.c"
+        "server/http_server.c"
+
+        # Handlers HTTP
+        "server/handlers/handler_root.c"
+        "server/handlers/handler_status.c"
+        "server/handlers/handler_led.c"
+
+        # Drivers
+        "drivers/led_driver.c"
+
     PRIV_INCLUDE_DIRS "${IDF_PATH}/components/esp_hw_support/include/esp_private"
-    REQUIRES esp_wifi esp_netif esp_event nvs_flash esp_http_server driver
+
+    INCLUDE_DIRS
+        "."                 # main/
+        "./wifi"
+        "./server"
+        "./server/handlers"
+        "./drivers"
+        "./config"
+
+    REQUIRES esp_http_server esp_wifi driver nvs_flash
 )

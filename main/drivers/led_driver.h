@@ -1,3 +1,12 @@
+#pragma once
+
+#include <stdint.h>
+
+// Inicializa el LED
 void led_init(int pin);
-void led_toggle();
-int led_get_state();
+
+// Cambia el estado del LED (on/off)
+void led_toggle(void);
+
+// Devuelve el estado actual del LED
+int led_get_state(void);
