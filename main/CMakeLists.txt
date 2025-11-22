@@ -5,10 +5,12 @@ idf_component_register(
 
         # Carpetas del proyecto
         "wifi/wifi.c"
+        "wifi/credentials.c"
         "server/http_server.c"
 
         # Handlers HTTP
         "server/handlers/handler_root.c"
+        "server/handlers/handler_config.c"
         "server/handlers/handler_status.c"
         "server/handlers/handler_led.c"
 
@@ -25,5 +27,7 @@ idf_component_register(
         "./drivers"
         "./config"
 
-    REQUIRES esp_http_server esp_wifi driver nvs_flash
+    REQUIRES esp_http_server esp_wifi driver nvs_flash json
+
+    EMBED_FILES "config.json"
 )

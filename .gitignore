@@ -56,4 +56,5 @@ Thumbs.db
 
 # Constants
 /main/config/credentials.h
+config.json
 compile_commands.json

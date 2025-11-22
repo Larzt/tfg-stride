@@ -4,6 +4,7 @@
 #include "config/constants.h"
 #include "handlers/handler_root.h"
 #include "handlers/handler_status.h"
+#include "handlers/handler_config.h"
 #include "handlers/handler_led.h"
 
 httpd_handle_t start_webserver(void)
@@ -16,6 +17,7 @@ httpd_handle_t start_webserver(void)
   if (httpd_start(&server, &config) == ESP_OK)
   {
     httpd_register_uri_handler(server, &uri_root);
+    httpd_register_uri_handler(server, &uri_config);
     httpd_register_uri_handler(server, &uri_status);
     httpd_register_uri_handler(server, &uri_led);
   }

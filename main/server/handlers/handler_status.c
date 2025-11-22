@@ -38,7 +38,7 @@ esp_err_t get_esp_status(httpd_req_t *req)
 }
 
 httpd_uri_t uri_status = {
-    .uri = GET_ESP32_STATUS,
+    .uri = ESP_STATUS,
     .method = HTTP_GET,
     .handler = get_esp_status,
     .user_ctx = NULL};

@@ -1,5 +1,6 @@
 #include "wifi.h"
-#include "config/credentials.h"
+#include "credentials.h"
+// #include "config/credentials.h"
 #include "config/constants.h"
 
 /* ============ EVENT HANDLER OPCIONAL ============ */
@@ -40,26 +41,26 @@ void wifi_init_softap_sta(void)
         NULL,
         NULL));
 
+    // Obtener las credenciales
+    wifi_credentials_t creds = get_wifi_credentials();
+
+    wifi_config_t wifi_ap_config = {0};
+    wifi_config_t wifi_sta_config = {0};
+
     // Config AP
-    wifi_config_t wifi_ap_config = {
-        .ap = {
-            .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
-            .channel = 1,
-            .password = EXAMPLE_ESP_WIFI_PASS,
-            .max_connection = EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
-        },
-    };
+    strncpy((char *)wifi_ap_config.ap.ssid, creds.ap_ssid, sizeof(wifi_ap_config.ap.ssid));
+    strncpy((char *)wifi_ap_config.ap.password, creds.ap_pass, sizeof(wifi_ap_config.ap.password));
+
+    wifi_ap_config.ap.ssid_len = strlen(creds.ap_ssid);
+    wifi_ap_config.ap.channel = 1;
+    wifi_ap_config.ap.max_connection = EXAMPLE_MAX_STA_CONN;
+    wifi_ap_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
 
     // Config STA
-    wifi_config_t wifi_sta_config = {
-        .sta = {
-            .ssid = LOCAL_WIFI_SSID,
-            .password = LOCAL_WIFI_PASS,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        },
-    };
+    strncpy((char *)wifi_sta_config.sta.ssid, creds.local_ssid, sizeof(wifi_sta_config.sta.ssid));
+    strncpy((char *)wifi_sta_config.sta.password, creds.local_pass, sizeof(wifi_sta_config.sta.password));
+
+    wifi_sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     // Modo AP+STA
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
@@ -70,5 +71,5 @@ void wifi_init_softap_sta(void)
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_connect());
 
-    ESP_LOGI(LWIFI, "Modo AP+STA iniciado correctamente");
+    ESP_LOGI(LWIFI, "Modo AP+STA iniciado con AP: %s y STA: %s", creds.ap_ssid, creds.local_ssid);
 }
