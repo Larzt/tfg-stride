@@ -6,6 +6,7 @@
 #define DEFAULT_LOCAL_SSID "DefaultLocalSSID"
 #define DEFAULT_LOCAL_PASS "DefaultLocalPASS"
 #define EXAMPLE_MAX_STA_CONN 4
+#define MAX_WIFI_CONNECT_LOCAL_RETRY 3
 
 // Declaración de variables, no definición
 extern const char *LMAIN;

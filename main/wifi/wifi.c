@@ -7,22 +7,36 @@
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
+    wifi_context_t *ctw = (wifi_context_t *)arg;
+
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
-        ESP_LOGI(LMAIN, "STA iniciando, intentando conectar...");
+        ESP_LOGI(LWIFI, "STA iniciando, intentando conectar...");
         esp_wifi_connect();
     }
-    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        ESP_LOGI(LMAIN, "STA conectado a red local");
+        if (ctw->retry_count < MAX_WIFI_CONNECT_LOCAL_RETRY)
+        {
+            ++ctw->retry_count;
+            ESP_LOGW(LWIFI, "Reintento STA (%d/%d)...", ctw->retry_count, MAX_WIFI_CONNECT_LOCAL_RETRY);
+            esp_wifi_connect();
+        }
+        else
+        {
+            ESP_LOGE(LWIFI, "No se pudo conectar al wifi local.");
+        }
     }
-    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
     {
-        ESP_LOGW(LMAIN, "STA desconectado, reintentando...");
-        esp_wifi_connect();
+        ESP_LOGI(LWIFI, "STA conectado a red local");
+        ctw->retry_count = 0;
     }
 }
 
+// Si no es capaz de conectarse a una red local el AP cae y no deja conectarse
 /* ============ INICIALIZACIÓN AP + STA ============ */
 void wifi_init_softap_sta(void)
 {
@@ -33,12 +47,14 @@ void wifi_init_softap_sta(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
+    wifi_context_t *wifi_ctx = calloc(1, sizeof(wifi_context_t));
+
     // Registrar eventos
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
         &wifi_event_handler,
-        NULL,
+        wifi_ctx,
         NULL));
 
     // Obtener las credenciales
