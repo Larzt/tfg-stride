@@ -49,7 +49,7 @@ wifi_credentials_t get_wifi_credentials(void)
     return creds;
   }
 
-  // Obtener objeto ESP_AP
+  // Obtener objeto ESPAP
   cJSON *esp_ap = cJSON_GetObjectItemCaseSensitive(root, "ESPAP");
   if (esp_ap)
   {

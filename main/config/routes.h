@@ -1,3 +1,6 @@
+#ifndef ROUTES_H
+#define ROUTES_H
+
 // Aqui van las rutas de la API
 
 // ESP32
@@ -9,3 +12,6 @@
 
 // LEDS
 #define PUT_LED "/api/led"
+#define PUT_I2C_LED "/api/i2cled"
+
+#endif

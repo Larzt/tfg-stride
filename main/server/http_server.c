@@ -2,10 +2,11 @@
 #include "esp_log.h"
 
 #include "config/constants.h"
-#include "handlers/handler_root.h"
-#include "handlers/handler_status.h"
-#include "handlers/handler_config.h"
-#include "handlers/handler_led.h"
+#include "handlers/internal/handler_root.h"
+#include "handlers/internal/handler_status.h"
+#include "handlers/internal/handler_config.h"
+#include "handlers/internal/handler_led.h"
+#include "handlers/external/handler_i2c_led.h"
 
 httpd_handle_t start_webserver(void)
 {
@@ -20,6 +21,7 @@ httpd_handle_t start_webserver(void)
     httpd_register_uri_handler(server, &uri_config);
     httpd_register_uri_handler(server, &uri_status);
     httpd_register_uri_handler(server, &uri_led);
+    httpd_register_uri_handler(server, &uri_i2c_led);
   }
 
   ESP_LOGI(LSERVER, "El servidor se ha inicializado correctamente");

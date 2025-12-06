@@ -3,7 +3,6 @@
 // #include "config/credentials.h"
 #include "config/constants.h"
 
-/* ============ EVENT HANDLER OPCIONAL ============ */
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
@@ -17,6 +16,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
+        // Limitar las reconecciones para evitar que colapse el AP
         if (ctw->retry_count < MAX_WIFI_CONNECT_LOCAL_RETRY)
         {
             ++ctw->retry_count;
@@ -36,8 +36,6 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-// Si no es capaz de conectarse a una red local el AP cae y no deja conectarse
-/* ============ INICIALIZACIÓN AP + STA ============ */
 void wifi_init_softap_sta(void)
 {
     // Crear interfaces AP y STA

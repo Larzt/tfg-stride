@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WIFI_H
+#define WIFI_H
 
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -11,3 +12,5 @@ typedef struct
 
 // Inicializa el ESP32 en modo AP + STA
 void wifi_init_softap_sta(void);
+
+#endif

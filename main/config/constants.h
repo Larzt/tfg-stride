@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
 // Variables default de wifi
 #define DEFAULT_AP_SSID "MiESP32AP"
@@ -13,3 +14,5 @@ extern const char *LMAIN;
 extern const char *LWIFI;
 extern const char *LSERVER;
 extern const char *LWIFICREDS;
+
+#endif

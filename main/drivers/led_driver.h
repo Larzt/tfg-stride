@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LED_DRIVER_H
+#define LED_DRIVER_H
 
 #include <stdint.h>
 
@@ -10,3 +11,5 @@ void led_toggle(void);
 
 // Devuelve el estado actual del LED
 int led_get_state(void);
+
+#endif

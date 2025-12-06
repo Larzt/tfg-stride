@@ -9,13 +9,17 @@ idf_component_register(
         "server/http_server.c"
 
         # Handlers HTTP
-        "server/handlers/handler_root.c"
-        "server/handlers/handler_config.c"
-        "server/handlers/handler_status.c"
-        "server/handlers/handler_led.c"
+        # Internal
+        "server/handlers/internal/handler_root.c"
+        "server/handlers/internal/handler_config.c"
+        "server/handlers/internal/handler_status.c"
+        "server/handlers/internal/handler_led.c"
+        # External
+        "server/handlers/external/handler_i2c_led.c"
 
         # Drivers
         "drivers/led_driver.c"
+        "drivers/pcf_driver.c"
 
     PRIV_INCLUDE_DIRS "${IDF_PATH}/components/esp_hw_support/include/esp_private"
 

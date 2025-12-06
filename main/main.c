@@ -12,7 +12,8 @@
 #include "server/http_server.h"
 #include "config/constants.h"
 
-/* ==================== App Main ==================== */
+#include "pcf_driver.h"
+
 void app_main(void)
 {
     // Inicializa NVS
@@ -22,6 +23,13 @@ void app_main(void)
 
     // Inicializa WiFi en modo AP + STA
     wifi_init_softap_sta();
+
+    // Inicializa PCF8574 (driver I2C)
+    if (pcf8574_init(0x27) != ESP_OK)
+    {
+        ESP_LOGE(LMAIN, "Error inicializando PCF8574");
+        return; // Si falla, no seguimos
+    }
 
     // Inicia servidor HTTP
     start_webserver();
