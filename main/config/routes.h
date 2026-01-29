@@ -6,6 +6,8 @@
 // ESP32
 #define ESP_STATUS "/api/status"
 #define ESP_CONFIG "/api/config"
+#define ESP_WIFI_FORM_CONFIG "/api/wifi/config"
+#define ESP_WIFI_SET_CONFIG "/set_wifi"
 
 // SENSORS
 #define GET_SENSORS "/api/sensors"

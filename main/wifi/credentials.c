@@ -4,6 +4,10 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include "cJSON.h"
+
+#include "nvs_flash.h"
+#include "nvs.h"
+
 #include <string.h>
 
 // El archivo fue embebido mediante CMake (EMBED_FILES)
@@ -90,4 +94,30 @@ wifi_credentials_t get_wifi_credentials(void)
   ESP_LOGI(LWIFICREDS, "Se ha cargado config.json correctamente.");
 
   return creds;
+}
+
+void save_wifi_credentials(const char *ssid, const char *pass)
+{
+  nvs_handle_t nvs_handle;
+  esp_err_t err = nvs_open("wifi_creds", NVS_READWRITE, &nvs_handle);
+  if (err != ESP_OK)
+  {
+    ESP_LOGE(LWIFICREDS, "No se pudo abrir NVS: %s", esp_err_to_name(err));
+    return;
+  }
+
+  nvs_set_str(nvs_handle, "ssid", ssid);
+  nvs_set_str(nvs_handle, "pass", pass);
+
+  err = nvs_commit(nvs_handle);
+  if (err != ESP_OK)
+  {
+    ESP_LOGE(LWIFICREDS, "Error al guardar credenciales: %s", esp_err_to_name(err));
+  }
+  else
+  {
+    ESP_LOGI(LWIFICREDS, "Credenciales guardadas: SSID=%s", ssid);
+  }
+
+  nvs_close(nvs_handle);
 }

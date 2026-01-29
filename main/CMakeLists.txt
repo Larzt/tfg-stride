@@ -9,6 +9,7 @@ idf_component_register(
         "server/http_server.c"
 
         # Handlers HTTP
+        "server/handlers/config/handler_wifi_config.c"
         # Internal
         "server/handlers/internal/handler_root.c"
         "server/handlers/internal/handler_config.c"

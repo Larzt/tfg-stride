@@ -13,5 +13,6 @@ typedef struct
 } wifi_credentials_t;
 
 wifi_credentials_t get_wifi_credentials(void);
+void save_wifi_credentials(const char *ssid, const char *pass);
 
 #endif
