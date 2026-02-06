@@ -3,12 +3,21 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+// Server & Handlers (endpoints)
+#include "server.h"
+#include "status_endpoint.h"
+#include "config_endpoint.h"
+
 extern "C" void app_main(void)
 {
     WifiHandler wifi;
 
-    wifi.init("MI_ESP32_AP", "123456789",
-              "MOVISTAR_478F", "5RibhXQvhsQkqFiCizyC");
+    wifi.init();
+
+    Server *server = new Server();
+    server->add_handler(new StatusHandler());
+    server->add_handler(new ConfigHandler());
+    server->start();
 
     // Core 1
     xTaskCreatePinnedToCore([](void *pvParameters)

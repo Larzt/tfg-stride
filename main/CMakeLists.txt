@@ -1,18 +1,20 @@
-idf_component_register(
-    SRCS
-        "main.cc"
-        "wifi/WifiHandler.cc"
-        "server/server.cc"
+# archivos .cc, .cpp y .c en la carpeta actual y subcarpetas
+file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cc" "*.cpp" "*.c")
 
-    # PRIV_INCLUDE_DIRS "${IDF_PATH}/components/esp_hw_support/include/esp_private"
+idf_component_register(
+    SRCS ${SOURCES}
+
+    PRIV_INCLUDE_DIRS "${IDF_PATH}/components/esp_hw_support/include/esp_private"
 
     INCLUDE_DIRS
         "."
         "./wifi"
         "./server"
         "./handlers"
+        "./handlers/libs"
+        "./consts"
 
     REQUIRES esp_http_server esp_wifi driver nvs_flash json
 
-    # EMBED_FILES "config.json"
+    EMBED_FILES "config.json"
 )

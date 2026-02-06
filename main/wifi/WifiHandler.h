@@ -9,8 +9,7 @@ class WifiHandler
 {
 public:
   WifiHandler();
-  void init(const std::string &ap_ssid, const std::string &ap_pass,
-            const std::string &sta_ssid, const std::string &sta_pass);
+  void init();
 
 private:
   static void event_handler(void *arg, esp_event_base_t event_base,

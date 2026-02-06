@@ -1,23 +1,23 @@
 #include "server.h"
 
 #include "esp_log.h"
-#include "wifi/wifi.h"
+#include "WifiHandler.h"
 
 static const char *TAG = "SERVER";
 
-Server::Server() : server_(nullptr) {}
+Server::Server() : _server(nullptr) {}
 
 Server::~Server()
 {
-  if (server_)
+  if (_server)
   {
-    httpd_stop(server_);
+    httpd_stop(_server);
   }
 }
 
 void Server::add_handler(Handler *handler)
 {
-  handlers_.push_back(handler);
+  _handlers.push_back(handler);
 }
 
 httpd_handle_t Server::start()
@@ -25,7 +25,7 @@ httpd_handle_t Server::start()
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.server_port = port();
 
-  if (httpd_start(&server_, &config) != ESP_OK)
+  if (httpd_start(&_server, &config) != ESP_OK)
   {
     ESP_LOGE(TAG, "No se pudo iniciar el servidor");
     return nullptr;
@@ -33,21 +33,19 @@ httpd_handle_t Server::start()
 
   register_handlers();
 
-  ESP_LOGI(TAG, "Servidor HTTP iniciado");
-  return server_;
+  ESP_LOGI("SERVER", "Servidor escuchando en el puerto: %d", config.server_port);
+  return _server;
 }
 
 void Server::register_handlers()
 {
-  bool ap_mode = is_wifi_in_ap_mode();
+  // bool ap_mode = is_wifi_in_ap_mode();
 
-  for (auto *handler : handlers_)
+  for (auto *handler : _handlers)
   {
-    if ((ap_mode && handler->enabled_in_ap_mode()) ||
-        (!ap_mode && handler->enabled_in_sta_mode()))
-    {
-
-      httpd_register_uri_handler(server_, handler->get_uri());
-    }
+    // if ((ap_mode && handler->enabled_in_ap_mode()) ||
+    // (!ap_mode && handler->enabled_in_sta_mode()))
+    // { }
+    httpd_register_uri_handler(_server, handler->get_uri());
   }
 }

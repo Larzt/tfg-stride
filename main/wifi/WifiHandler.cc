@@ -1,6 +1,8 @@
 #include "WifiHandler.h"
+#include "wifi_credentials.h"
+
 #include "nvs_flash.h"
-#include <cstring>
+#include <string>
 
 const char *WifiHandler::TAG = "WifiHandler";
 int WifiHandler::s_retry_num = 0;
@@ -31,9 +33,10 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   }
 }
 
-void WifiHandler::init(const std::string &ap_ssid, const std::string &ap_pass,
-                       const std::string &sta_ssid, const std::string &sta_pass)
+void WifiHandler::init()
 {
+  wifi_credentials_t creds = get_wifi_credentials();
+
   // 1. Inicializar NVS
   esp_err_t ret = nvs_flash_init();
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -59,17 +62,20 @@ void WifiHandler::init(const std::string &ap_ssid, const std::string &ap_pass,
   // 4. Configurar Dual Mode
   wifi_config_t wifi_config = {};
 
-  // Configuración AP
-  strncpy((char *)wifi_config.ap.ssid, ap_ssid.c_str(), sizeof(wifi_config.ap.ssid));
-  strncpy((char *)wifi_config.ap.password, ap_pass.c_str(), sizeof(wifi_config.ap.password));
+  // Configuración AP - Eliminado .c_str() ya que son char arrays
+  // Usamos strlcpy por seguridad (garantiza el null-terminator)
+  strlcpy((char *)wifi_config.ap.ssid, creds.ap_ssid, sizeof(wifi_config.ap.ssid));
+  strlcpy((char *)wifi_config.ap.password, creds.ap_pass, sizeof(wifi_config.ap.password));
+
+  wifi_config.ap.ssid_len = strlen(creds.ap_ssid);
   wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
-  wifi_config.ap.max_connection = 4;
+  wifi_config.ap.max_connection = EXAMPLE_MAX_STA_CONN;
   wifi_config.ap.channel = 1;
 
-  // Configuración STA
+  // Configuración STA - Cambiado sta_ssid por local_ssid según tu struct
   wifi_config_t sta_config = {};
-  strncpy((char *)sta_config.sta.ssid, sta_ssid.c_str(), sizeof(sta_config.sta.ssid));
-  strncpy((char *)sta_config.sta.password, sta_pass.c_str(), sizeof(sta_config.sta.password));
+  strlcpy((char *)sta_config.sta.ssid, creds.local_ssid, sizeof(sta_config.sta.ssid));
+  strlcpy((char *)sta_config.sta.password, creds.local_pass, sizeof(sta_config.sta.password));
 
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
