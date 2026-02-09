@@ -5,7 +5,7 @@
 
 static const char *TAG = "SERVER";
 
-Server::Server() : _server(nullptr) {}
+Server::Server() : _server(nullptr), _mode(DEV) {}
 
 Server::~Server()
 {

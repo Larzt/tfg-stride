@@ -9,7 +9,7 @@
 
 StatusHandler::StatusHandler()
 {
-  _uri.uri = "/";
+  _uri.uri = "/status";
   _uri.method = HTTP_GET;
   _uri.handler = &StatusHandler::handler;
   _uri.user_ctx = nullptr;
@@ -28,16 +28,15 @@ esp_err_t StatusHandler::handler(httpd_req_t *req)
   uint32_t free_heap = esp_get_free_heap_size();
   uint32_t cpu_freq = esp_clk_cpu_freq() / 1000000;
 
-  std::string resp =
-      "{" + kENDL +
-      "  \"status\": \"ok\"," + kENDL +
-      "  \"cores\": " + std::to_string(chip_info.cores) + "," + kENDL +
-      "  \"chip_model\": " + std::to_string(chip_info.model) + "," + kENDL +
-      "  \"revision\": " + std::to_string(chip_info.revision) + "," + kENDL +
-      "  \"features\": " + std::to_string(chip_info.features) + "," + kENDL +
-      "  \"cpu_freq_mhz\": " + std::to_string(cpu_freq) + "," + kENDL +
-      "  \"free_heap\": " + std::to_string(free_heap) + kENDL +
-      "}";
+  std::string resp = "{" + kENDL;
+  resp += "  \"status\": \"ok\"," + kENDL;
+  resp += "  \"cores\": " + std::to_string(chip_info.cores) + "," + kENDL;
+  resp += "  \"chip_model\": " + std::to_string(chip_info.model) + "," + kENDL;
+  resp += "  \"revision\": " + std::to_string(chip_info.revision) + "," + kENDL;
+  resp += "  \"features\": " + std::to_string(chip_info.features) + "," + kENDL;
+  resp += "  \"cpu_freq_mhz\": " + std::to_string(cpu_freq) + "," + kENDL;
+  resp += "  \"free_heap\": " + std::to_string(free_heap) + kENDL;
+  resp += "}";
 
   httpd_resp_set_type(req, "application/json");
   httpd_resp_send(req, resp.c_str(), resp.length());
