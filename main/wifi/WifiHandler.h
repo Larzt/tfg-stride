@@ -5,15 +5,20 @@
 #include "esp_event.h"
 #include "esp_log.h"
 
+// pins
+#include "output.h"
+
 class WifiHandler
 {
 public:
   WifiHandler();
   void init();
+  static OutputPin wifi_led;
 
 private:
-  static void event_handler(void *arg, esp_event_base_t event_base,
-                            int32_t event_id, void *event_data);
+  static void
+  event_handler(void *arg, esp_event_base_t event_base,
+                int32_t event_id, void *event_data);
 
   static const char *TAG;
   static int s_retry_num;

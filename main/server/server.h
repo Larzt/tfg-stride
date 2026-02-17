@@ -18,6 +18,7 @@ public:
 
   void add_handler(Handler *handler);
   httpd_handle_t start();
+  void reset_handlers();
   inline bool is_dev_mode() { return _mode == DEV ? true : false; }
   inline void set_dev_mode(ServerMode mode) { _mode = mode; }
 
@@ -29,5 +30,6 @@ private:
   ServerMode _mode;
   std::vector<Handler *> _handlers;
 
+  void load_handlers();
   void register_handlers();
 };

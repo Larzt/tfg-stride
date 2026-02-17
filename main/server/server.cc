@@ -3,9 +3,14 @@
 #include "esp_log.h"
 #include "WifiHandler.h"
 
+#include "root_endpoint.h"
+#include "ping_endpoint.h"
+#include "status_endpoint.h"
+#include "config_endpoint.h"
+
 static const char *TAG = "SERVER";
 
-Server::Server() : _server(nullptr), _mode(DEV) {}
+Server::Server() : _server(nullptr), _mode(USER) {}
 
 Server::~Server()
 {
@@ -31,10 +36,48 @@ httpd_handle_t Server::start()
     return nullptr;
   }
 
+  load_handlers();
   register_handlers();
 
   ESP_LOGI("SERVER", "Servidor escuchando en el puerto: %d", config.server_port);
   return _server;
+}
+
+void Server::reset_handlers()
+{
+  ESP_LOGW(TAG, "Limpiando rutas del servidor HTTP...");
+
+  for (auto *handler : _handlers)
+  {
+    httpd_unregister_uri_handler(_server,
+                                 handler->get_uri()->uri,
+                                 handler->get_uri()->method);
+  }
+
+  for (auto *handler : _handlers)
+  {
+    delete handler;
+  }
+  _handlers.clear();
+
+  load_handlers();
+  register_handlers();
+}
+
+void Server::load_handlers()
+{
+  if (this->is_dev_mode())
+  {
+    ESP_LOGW("Server mode: ", "Dev mode");
+    this->add_handler(new StatusHandler());
+    this->add_handler(new ConfigHandler());
+  }
+  else
+  {
+    ESP_LOGW("Server mode: ", "User mode");
+    this->add_handler(new RootHandler());
+    this->add_handler(new PingHandler());
+  }
 }
 
 void Server::register_handlers()

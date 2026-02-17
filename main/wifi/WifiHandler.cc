@@ -5,7 +5,10 @@
 #include <string>
 
 const char *WifiHandler::TAG = "WifiHandler";
+#define WIFI_PIN_27 GPIO_NUM_27
+
 int WifiHandler::s_retry_num = 0;
+OutputPin WifiHandler::wifi_led(WIFI_PIN_27);
 
 WifiHandler::WifiHandler() {}
 
@@ -18,6 +21,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   }
   else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
   {
+    wifi_led.turn(false);
     if (s_retry_num < 10)
     {
       esp_wifi_connect();
@@ -29,6 +33,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(TAG, "IP Obtenida: " IPSTR, IP2STR(&event->ip_info.ip));
+    wifi_led.turn(true);
     s_retry_num = 0;
   }
 }
@@ -36,6 +41,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
 void WifiHandler::init()
 {
   wifi_credentials_t creds = get_wifi_credentials();
+  wifi_led.init();
 
   // 1. Inicializar NVS
   esp_err_t ret = nvs_flash_init();

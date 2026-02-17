@@ -1,5 +1,4 @@
-#ifndef ENDPOINT_HANDLER_H
-#define ENDPOINT_HANDLER_H
+#pragma once
 
 #include "esp_http_server.h"
 
@@ -15,5 +14,3 @@ public:
   virtual bool enabled_in_ap_mode() const { return true; }
   virtual bool enabled_in_sta_mode() const { return true; }
 };
-
-#endif
