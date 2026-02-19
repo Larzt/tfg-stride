@@ -23,12 +23,20 @@ bool InputPin::wait_for_long_press(uint32_t timeout_ms)
 
   if (current_state == 1 && !_is_pressing)
   {
+    ESP_LOGI("Button", "Pulsación iniciada...");
     _is_pressing = true;
     _start_time = xTaskGetTickCount();
   }
 
+  if (current_state == 0 && _is_pressing)
+  {
+    ESP_LOGW("Button: ", "Pulsacion cancelada...");
+    _is_pressing = false;
+  }
+
   if (_is_pressing)
   {
+    ESP_LOGW("Button: ", "Manten el boton presionado...");
     uint32_t duration_ms = (now - _start_time) * portTICK_PERIOD_MS;
     if (duration_ms >= timeout_ms)
     {

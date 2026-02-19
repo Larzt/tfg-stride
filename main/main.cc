@@ -35,28 +35,26 @@ void modes_manager(Server *server)
 
     while (true)
     {
-        if (mode_button.read() == 1)
+
+        if (mode_button.wait_for_long_press(5000))
         {
-            if (mode_button.wait_for_long_press(5000))
+            ESP_LOGW("Inputs:", "Five seconds passed!");
+            mode_led.toggle();
+
+            if (mode_led.get_level() == 1)
             {
-                ESP_LOGW("Inputs:", "Five seconds passed!");
-                mode_led.toggle();
-
-                if (mode_led.get_level() == 1)
-                {
-                    server->set_dev_mode(DEV);
-                }
-                else
-                {
-                    server->set_dev_mode(USER);
-                }
-
-                server->reset_handlers();
-                vTaskDelay(pdMS_TO_TICKS(100));
-                ESP_LOGI("Button", "Botón liberado");
+                server->set_dev_mode(DEV);
             }
+            else
+            {
+                server->set_dev_mode(USER);
+            }
+
+            server->reset_handlers();
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_LOGI("Button", "Botón liberado");
         }
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Polling rate
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second Polling rate
     }
 }
 
