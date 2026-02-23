@@ -1,0 +1,7 @@
+output=led name=myLed pin=16
+write=myLed ON
+read=myLed
+write=myLed OFF
+
+input=button name=myBut pin=18
+read=myBut
