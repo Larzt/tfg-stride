@@ -8,6 +8,7 @@ idf_component_register(
 
     INCLUDE_DIRS
         "."
+        "./language"
         "./wifi"
         "./server"
         "./handlers"
@@ -15,6 +16,7 @@ idf_component_register(
         "./controllers"
         "./controllers/libs"
         "./consts"
+        "./utils"
 
     REQUIRES esp_http_server esp_wifi driver nvs_flash json
 

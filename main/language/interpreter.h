@@ -1,13 +1,15 @@
 #pragma once
-#include "lexer.h"
-#include "runtime.h"
 #include <vector>
+#include <unordered_map>
+#include "lexer.h"
+#include "output.h"
+#include "input.h"
 
 class Interpreter
 {
-private:
-  RuntimeContext context;
-
 public:
   void execute(const std::vector<Token> &tokens);
+
+private:
+  std::unordered_map<std::string, OutputPin *> outputs;
 };
