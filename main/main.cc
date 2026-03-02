@@ -3,9 +3,10 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-// Server & Handlers (endpoints)
-#include "server.h"
 #include "interpreter.h"
+
+// Server & Handlers
+#include "server.h"
 
 // Controllers
 #include "input.h"
@@ -17,38 +18,46 @@
 #define MODE_PIN_26 GPIO_NUM_26
 #define BUTTON_MODE_12 GPIO_NUM_12
 
-void loop(void *pvParameters)
-{
-    ESP_LOGW("SYSTEM", "Tarea de entrada iniciada en Core 1");
+// Handle solo de la tarea principal
+static TaskHandle_t mainTaskHandle = NULL;
 
+/* ============================================================
+   TAREA PRINCIPAL (servidor - pesada)
+   ============================================================ */
+void main_task(void *pvParameters)
+{
     Server *server = (Server *)pvParameters;
+    uint32_t led_state;
 
-    modes_manager(server);
-
-    test_str_programs();
-}
-
-void test_str_programs()
-{
-    Interpreter interpreter;
+    ESP_LOGI("SYSTEM", "MainTask iniciada");
 
     while (true)
     {
-        auto tokens = Tokenize("
-            output=led name=myLed pin=16
-            write=myLed ON");
-        interpreter.execute(tokens);
+        if (xTaskNotifyWait(0, 0, &led_state, portMAX_DELAY))
+        {
+            ESP_LOGI("SYSTEM", "Cambio de modo recibido");
 
-        vTaskDelay(pdMS_TO_TICKS(2000));
+            if (led_state == 1)
+            {
+                server->set_dev_mode(DEV);
+                ESP_LOGI("SYSTEM", "Modo DEV activado");
+            }
+            else
+            {
+                server->set_dev_mode(USER);
+                ESP_LOGI("SYSTEM", "Modo USER activado");
+            }
 
-        tokens = Tokenize("write=myLed OFF");
-        interpreter.execute(tokens);
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
+            server->reset_handlers();
+            ESP_LOGI("SYSTEM", "Servidor reconfigurado");
+        }
     }
 }
 
-void modes_manager(Server *server)
+/* ============================================================
+   TAREA DEL BOTÓN (solo controla servidor)
+   ============================================================ */
+void button_task(void *pvParameters)
 {
     InputPin mode_button(BUTTON_MODE_12, false);
     OutputPin mode_led(MODE_PIN_26);
@@ -56,31 +65,65 @@ void modes_manager(Server *server)
     mode_button.init();
     mode_led.init();
 
+    ESP_LOGI("SYSTEM", "ButtonTask iniciada");
+
     while (true)
     {
-
-        if (mode_button.wait_for_long_press(5000))
+        if (mode_button.wait_for_long_press(TIME_PRESSED))
         {
-            ESP_LOGW("Inputs:", "Five seconds passed!");
+            ESP_LOGW("Inputs", "Five seconds passed!");
+
             mode_led.toggle();
 
-            if (mode_led.get_level() == 1)
+            if (mainTaskHandle != NULL)
             {
-                server->set_dev_mode(DEV);
-            }
-            else
-            {
-                server->set_dev_mode(USER);
+                xTaskNotify(
+                    mainTaskHandle,
+                    mode_led.get_level(),
+                    eSetValueWithOverwrite);
             }
 
-            server->reset_handlers();
-            vTaskDelay(pdMS_TO_TICKS(100));
-            ESP_LOGI("Button", "Botón liberado");
+            ESP_LOGI("Button", "Modo cambiado");
         }
-        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second Polling rate
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
+/* ============================================================
+   TAREA TEST INTERPRETER (INDEPENDIENTE)
+   ============================================================ */
+void test_str_programs(void *params)
+{
+    Interpreter interpreter;
+
+    // Crear LED virtual del lenguaje
+    auto tokens = Tokenize(R"(
+output=led name=myLed pin=16
+)");
+    interpreter.execute(tokens);
+
+    ESP_LOGI("TEST", "TestStrPrograms iniciada");
+
+    while (true)
+    {
+        tokens = Tokenize("write=myLed on");
+        interpreter.execute(tokens);
+        ESP_LOGI("TEST", "LED ON");
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+
+        tokens = Tokenize("write=myLed off");
+        interpreter.execute(tokens);
+        ESP_LOGI("TEST", "LED OFF");
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
+/* ============================================================
+   APP MAIN
+   ============================================================ */
 extern "C" void app_main(void)
 {
     WifiHandler wifi;
@@ -89,13 +132,33 @@ extern "C" void app_main(void)
     Server *server = new Server();
     server->start();
 
-    // Main Loop: Prioridad alta (5) en Core 1 para respuesta instantánea
-    xTaskCreatePinnedToCore(loop, "ButtonTask", 2048, (void *)server, 5, NULL, 1);
+    // Tarea servidor
+    xTaskCreatePinnedToCore(
+        main_task,
+        "MainTask",
+        6144,
+        (void *)server,
+        5,
+        &mainTaskHandle,
+        1);
 
-    // Core 1
-    xTaskCreatePinnedToCore([](void *pvParameters)
-                            {
-        while (true) {
-            vTaskDelay(pdMS_TO_TICKS(5000));
-        } }, "MainTask", 4096, NULL, 5, NULL, 1);
+    // Tarea botón
+    xTaskCreatePinnedToCore(
+        button_task,
+        "ButtonTask",
+        4096,
+        NULL,
+        5,
+        NULL,
+        1);
+
+    // Tarea independiente de test
+    xTaskCreatePinnedToCore(
+        test_str_programs,
+        "TestTask",
+        4096,
+        NULL,
+        4, // prioridad ligeramente menor
+        NULL,
+        1);
 }

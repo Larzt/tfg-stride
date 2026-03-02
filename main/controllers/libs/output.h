@@ -13,7 +13,7 @@ public:
 
   void toggle();
   inline int get_level() { return _state; }
-  inline void turn(bool state) { _state = state; }
+  void turn(bool state);
 
 private:
   inline void set_level(int level) { gpio_set_level(_pin, level); }
