@@ -1,65 +1,73 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
+#include <iostream>
+#include <algorithm>
 
 enum class TokenType
 {
+  // BASICS
   OUTPUT,
   INPUT,
-  LED,
-  BUTTON,
   PIN,
+  BUTTON,
+  LED,
   NAME,
   WRITE,
   READ,
+
+  // I2C
+  I2C,
+  INIT,
+  SDA,
+  SCL,
+
+  // LITERALS
   NUMBER,
+  HEX_NUMBER,
+  IDENTIFIER, // Variables
   VALUE,
+
+  // SYMBOLS
+  ARROW,
   EQUAL,
-  SPACE,
+
   UNKNOWN
 };
+
+static const std::unordered_map<std::string, TokenType> keywords = {
+    {"output", TokenType::OUTPUT},
+    {"input", TokenType::INPUT},
+    {"led", TokenType::LED},
+    {"button", TokenType::BUTTON},
+    {"pin", TokenType::PIN},
+    {"name", TokenType::NAME},
+    {"write", TokenType::WRITE},
+    {"read", TokenType::READ},
+
+    // I2C
+    {"i2c", TokenType::I2C},
+    {"init", TokenType::INIT},
+    {"sda", TokenType::SDA},
+    {"scl", TokenType::SCL},
+
+    {"on", TokenType::VALUE},
+    {"off", TokenType::VALUE}};
 
 struct Token
 {
   TokenType type;
   std::string value;
+
+  Token() = default;
+
+  Token(const Token &token) : type(token.type), value(token.value) {}
+  Token(TokenType t) : type(t) {}
+  Token(TokenType t, const std::string &v) : type(t), value(v) {}
 };
 
-std::vector<Token> Tokenize(const std::string &line)
-{
-  std::vector<Token> tokens;
-  std::istringstream iss(line);
-  std::string word;
-  while (iss >> word)
-  {
-    if (word == "LED")
-      tokens.emplace_back(TokenType::LED);
-    else if (word == "OUTPUT")
-      tokens.emplace_back(TokenType::OUTPUT);
-    else if (word == "INPUT")
-      tokens.emplace_back(TokenType::INPUT);
-    else if (word == "LED")
-      tokens.emplace_back(TokenType::LED);
-    else if (word == "BUTTON")
-      tokens.emplace_back(TokenType::BUTTON);
-    else if (word == "PIN")
-      tokens.emplace_back(TokenType::PIN);
-    else if (word == "NAME")
-      tokens.emplace_back(TokenType::NAME);
-    else if (word == "WRITE")
-      tokens.emplace_back(TokenType::WRITE);
-    else if (word == "READ")
-      tokens.emplace_back(TokenType::READ);
-    else if (word == "NUMBER")
-      tokens.emplace_back(TokenType::NUMBER);
-    else if (word == "VALUE")
-      tokens.emplace_back(TokenType::VALUE);
-    else if (word == "EQUAL")
-      tokens.emplace_back(TokenType::EQUAL);
-    else if (word == "SPACE")
-      tokens.emplace_back(TokenType::SPACE);
-    else
-      tokens.emplace_back(TokenType::UNKNOWN);
-  }
-  return tokens;
-}
+Token GenerateToken(const std::string &word);
+std::vector<Token> Tokenize(const std::string &line);
+std::ostream &operator<<(std::ostream &out, TokenType type);
+std::ostream &operator<<(std::ostream &out, Token token);

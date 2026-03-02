@@ -5,6 +5,7 @@
 
 // Server & Handlers (endpoints)
 #include "server.h"
+#include "interpreter.h"
 
 // Controllers
 #include "input.h"
@@ -23,6 +24,28 @@ void loop(void *pvParameters)
     Server *server = (Server *)pvParameters;
 
     modes_manager(server);
+
+    test_str_programs();
+}
+
+void test_str_programs()
+{
+    Interpreter interpreter;
+
+    while (true)
+    {
+        auto tokens = Tokenize("
+            output=led name=myLed pin=16
+            write=myLed ON");
+        interpreter.execute(tokens);
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+
+        tokens = Tokenize("write=myLed OFF");
+        interpreter.execute(tokens);
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 }
 
 void modes_manager(Server *server)
