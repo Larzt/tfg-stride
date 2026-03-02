@@ -22,7 +22,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
   {
     wifi_led.turn(false);
-    if (s_retry_num < 10)
+    if (s_retry_num < 5)
     {
       esp_wifi_connect();
       s_retry_num++;

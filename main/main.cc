@@ -16,16 +16,49 @@
 #define MODE_PIN_26 GPIO_NUM_26
 #define BUTTON_MODE_12 GPIO_NUM_12
 
-void loop(void *pvParameters)
+// Handle de la tarea principal (servidor)
+static TaskHandle_t mainTaskHandle = NULL;
+
+/* ============================================================
+   TAREA PRINCIPAL (lógica pesada - servidor)
+   ============================================================ */
+void main_task(void *pvParameters)
 {
-    ESP_LOGW("SYSTEM", "Tarea de entrada iniciada en Core 1");
-
     Server *server = (Server *)pvParameters;
+    uint32_t led_state;
 
-    modes_manager(server);
+    ESP_LOGI("SYSTEM", "MainTask iniciada");
+
+    while (true)
+    {
+        // Espera notificación del botón
+        if (xTaskNotifyWait(0, 0, &led_state, portMAX_DELAY))
+        {
+            ESP_LOGI("SYSTEM", "Cambio de modo recibido");
+
+            if (led_state == 1)
+            {
+                ESP_LOGI("SYSTEM", "Modo DEV activado");
+                server->set_dev_mode(DEV);
+            }
+            else
+            {
+                ESP_LOGI("SYSTEM", "Modo USER activado");
+                server->set_dev_mode(USER);
+            }
+
+            // Operación pesada
+            server->reset_handlers();
+
+            ESP_LOGI("SYSTEM", "Servidor reconfigurado");
+        }
+    }
 }
 
-void modes_manager(Server *server)
+/* ============================================================
+   TAREA DEL BOTÓN (ligera)
+   ============================================================ */
+void button_task(void *pvParameters)
 {
     InputPin mode_button(BUTTON_MODE_12, false);
     OutputPin mode_led(MODE_PIN_26);
@@ -33,31 +66,34 @@ void modes_manager(Server *server)
     mode_button.init();
     mode_led.init();
 
+    ESP_LOGI("SYSTEM", "ButtonTask iniciada");
+
     while (true)
     {
-
-        if (mode_button.wait_for_long_press(5000))
+        if (mode_button.wait_for_long_press(TIME_PRESSED))
         {
-            ESP_LOGW("Inputs:", "Five seconds passed!");
+            ESP_LOGW("Inputs", "Five seconds passed!");
+
             mode_led.toggle();
 
-            if (mode_led.get_level() == 1)
+            if (mainTaskHandle != NULL)
             {
-                server->set_dev_mode(DEV);
-            }
-            else
-            {
-                server->set_dev_mode(USER);
+                xTaskNotify(
+                    mainTaskHandle,
+                    mode_led.get_level(),
+                    eSetValueWithOverwrite);
             }
 
-            server->reset_handlers();
-            vTaskDelay(pdMS_TO_TICKS(100));
             ESP_LOGI("Button", "Botón liberado");
         }
-        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second Polling rate
+
+        vTaskDelay(pdMS_TO_TICKS(100)); // polling rápido y seguro
     }
 }
 
+/* ============================================================
+   APP MAIN
+   ============================================================ */
 extern "C" void app_main(void)
 {
     WifiHandler wifi;
@@ -66,13 +102,23 @@ extern "C" void app_main(void)
     Server *server = new Server();
     server->start();
 
-    // Main Loop: Prioridad alta (5) en Core 1 para respuesta instantánea
-    xTaskCreatePinnedToCore(loop, "ButtonTask", 2048, (void *)server, 5, NULL, 1);
+    // Tarea principal (servidor - más stack)
+    xTaskCreatePinnedToCore(
+        main_task,
+        "MainTask",
+        6144, // stack suficiente para HTTP + C++
+        (void *)server,
+        5,
+        &mainTaskHandle,
+        1);
 
-    // Core 1
-    xTaskCreatePinnedToCore([](void *pvParameters)
-                            {
-        while (true) {
-            vTaskDelay(pdMS_TO_TICKS(5000));
-        } }, "MainTask", 4096, NULL, 5, NULL, 1);
+    // Tarea del botón (ligera)
+    xTaskCreatePinnedToCore(
+        button_task,
+        "ButtonTask",
+        4096,
+        NULL,
+        5,
+        NULL,
+        1);
 }

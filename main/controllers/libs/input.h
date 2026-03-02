@@ -19,4 +19,5 @@ private:
   bool _is_pull_up;
   bool _is_pressing;
   TickType_t _start_time;
+  TickType_t _last_log_time;
 };
