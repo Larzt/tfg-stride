@@ -17,6 +17,11 @@ enum class TokenType
   WRITE,
   READ,
 
+  // FLOW CONTROL
+  LOOP,
+  DLOOP,
+  WAIT,
+
   // I2C
   I2C,
   INIT,
@@ -45,6 +50,11 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"name", TokenType::NAME},
     {"write", TokenType::WRITE},
     {"read", TokenType::READ},
+
+    // FLOW CONTROL
+    {"loop", TokenType::LOOP},
+    {"dloop", TokenType::DLOOP},
+    {"wait", TokenType::WAIT},
 
     // I2C
     {"i2c", TokenType::I2C},

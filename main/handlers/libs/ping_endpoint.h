@@ -8,7 +8,7 @@ class PingHandler : public Handler
 public:
   PingHandler();
 
-  httpd_uri_t *get_uri() override;
+  httpd_uri_t *get_get_uri() override;
 
 private:
   static OutputPin user_ping_led;

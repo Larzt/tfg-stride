@@ -15,7 +15,7 @@ StatusHandler::StatusHandler()
   _uri.user_ctx = nullptr;
 }
 
-httpd_uri_t *StatusHandler::get_uri()
+httpd_uri_t *StatusHandler::get_get_uri()
 {
   return &_uri;
 }

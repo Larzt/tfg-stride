@@ -1,53 +1,94 @@
 #include "input.h"
-
 #include "esp_log.h"
+
+static const char *TAG = "InputPin";
+
+InputPin::InputPin(gpio_num_t pin, bool pull_up)
+    : PinBase(pin),
+      _pull_up(pull_up)
+{
+}
 
 void InputPin::init()
 {
   gpio_reset_pin(_pin);
   gpio_set_direction(_pin, GPIO_MODE_INPUT);
-  if (_is_pull_up)
-  {
+
+  if (_pull_up)
     gpio_set_pull_mode(_pin, GPIO_PULLUP_ONLY);
-  }
   else
-  {
     gpio_set_pull_mode(_pin, GPIO_PULLDOWN_ONLY);
+}
+
+bool InputPin::read_raw()
+{
+  int level = gpio_get_level(_pin);
+
+  // Si es pull-up: pulsado = LOW
+  if (_pull_up)
+    return (level == 0);
+  else
+    return (level == 1);
+}
+
+bool InputPin::read_debounced()
+{
+  bool reading = read_raw();
+  TickType_t now = xTaskGetTickCount();
+
+  if (reading != _last_reading)
+  {
+    _last_debounce_time = now;
   }
+
+  if ((now - _last_debounce_time) > pdMS_TO_TICKS(DEBOUNCE_MS))
+  {
+    _last_state = reading;
+  }
+
+  _last_reading = reading;
+
+  return _last_state;
+}
+
+bool InputPin::is_pressed()
+{
+  return read_debounced();
 }
 
 bool InputPin::wait_for_long_press(uint32_t timeout_ms)
 {
   TickType_t now = xTaskGetTickCount();
-  int current_state = read();
+  bool pressed = read_debounced();
 
-  if (current_state == 1 && !_is_pressing)
+  if (pressed && !_is_pressing)
   {
-    ESP_LOGI("Button", "Pulsación iniciada...");
+    ESP_LOGI(TAG, "Pulsación iniciada");
     _is_pressing = true;
     _start_time = now;
-    _last_log_time = now; // iniciar control de log
+    _last_log_time = now;
   }
 
-  if (current_state == 0 && _is_pressing)
+  if (!pressed && _is_pressing)
   {
-    ESP_LOGW("Button", "Pulsacion cancelada...");
+    ESP_LOGI(TAG, "Pulsación cancelada");
     _is_pressing = false;
   }
 
   if (_is_pressing)
   {
-    // Log solo cada 1 segundo
     if ((now - _last_log_time) >= pdMS_TO_TICKS(1000))
     {
-      ESP_LOGW("Button", "Mantén el botón presionado...");
+      ESP_LOGI(TAG, "Mantén presionado...");
       _last_log_time = now;
     }
 
-    uint32_t duration_ms = (now - _start_time) * portTICK_PERIOD_MS;
+    uint32_t duration_ms =
+        (now - _start_time) * portTICK_PERIOD_MS;
 
     if (duration_ms >= timeout_ms)
     {
+      ESP_LOGI(TAG, "Long press detectado");
       _is_pressing = false;
       return true;
     }

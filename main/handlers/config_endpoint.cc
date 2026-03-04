@@ -11,7 +11,7 @@ ConfigHandler::ConfigHandler()
   _uri.user_ctx = nullptr;
 }
 
-httpd_uri_t *ConfigHandler::get_uri()
+httpd_uri_t *ConfigHandler::get_get_uri()
 {
   return &_uri;
 }

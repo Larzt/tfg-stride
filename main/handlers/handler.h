@@ -8,7 +8,8 @@ public:
   virtual ~Handler() = default;
 
   // Devuelve la definición del endpoint
-  virtual httpd_uri_t *get_uri() = 0;
+  virtual httpd_uri_t *get_get_uri() = 0;
+  virtual httpd_uri_t *get_post_uri() { return nullptr; }
 
   // Permite habilitar/deshabilitar según modo (AP / STA)
   virtual bool enabled_in_ap_mode() const { return true; }

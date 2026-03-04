@@ -7,10 +7,12 @@
 #include "ping_endpoint.h"
 #include "status_endpoint.h"
 #include "config_endpoint.h"
+#include "sd_editor_endpoint.h"
+#include "sd_reader_endpoint.h"
 
 static const char *TAG = "SERVER";
 
-Server::Server() : _server(nullptr), _mode(USER) {}
+Server::Server() : _server(nullptr), _mode(DEV) {}
 
 Server::~Server()
 {
@@ -50,8 +52,14 @@ void Server::reset_handlers()
   for (auto *handler : _handlers)
   {
     httpd_unregister_uri_handler(_server,
-                                 handler->get_uri()->uri,
-                                 handler->get_uri()->method);
+                                 handler->get_get_uri()->uri,
+                                 handler->get_get_uri()->method);
+    if (handler->get_post_uri() != nullptr)
+    {
+      httpd_unregister_uri_handler(_server,
+                                   handler->get_post_uri()->uri,
+                                   handler->get_post_uri()->method);
+    }
   }
 
   for (auto *handler : _handlers)
@@ -71,6 +79,8 @@ void Server::load_handlers()
     ESP_LOGW("Server mode: ", "Dev mode");
     this->add_handler(new StatusHandler());
     this->add_handler(new ConfigHandler());
+    this->add_handler(new SdEditorHandler());
+    this->add_handler(new SdReaderHandler("/sdcard/program.str"));
   }
   else
   {
@@ -84,11 +94,19 @@ void Server::register_handlers()
 {
   // bool ap_mode = is_wifi_in_ap_mode();
 
-  for (auto *handler : _handlers)
+  for (Handler *handler : _handlers)
   {
-    // if ((ap_mode && handler->enabled_in_ap_mode()) ||
-    // (!ap_mode && handler->enabled_in_sta_mode()))
-    // { }
-    httpd_register_uri_handler(_server, handler->get_uri());
+    if (httpd_register_uri_handler(_server, handler->get_get_uri()) != ESP_OK)
+    {
+      ESP_LOGE("SERVER", "Error registering GET");
+    }
+
+    if (handler->get_post_uri() != nullptr)
+    {
+      if (httpd_register_uri_handler(_server, handler->get_post_uri()) != ESP_OK)
+      {
+        ESP_LOGE("SERVER", "Error registering POST");
+      }
+    }
   }
 }

@@ -12,7 +12,7 @@ RootHandler::RootHandler()
   _uri.user_ctx = nullptr;
 }
 
-httpd_uri_t *RootHandler::get_uri()
+httpd_uri_t *RootHandler::get_get_uri()
 {
   return &_uri;
 }

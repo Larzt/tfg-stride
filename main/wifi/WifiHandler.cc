@@ -21,7 +21,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   }
   else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
   {
-    wifi_led.turn(false);
+    wifi_led.off();
     if (s_retry_num < 5)
     {
       esp_wifi_connect();
@@ -33,7 +33,7 @@ void WifiHandler::event_handler(void *arg, esp_event_base_t event_base,
   {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(TAG, "IP Obtenida: " IPSTR, IP2STR(&event->ip_info.ip));
-    wifi_led.turn(true);
+    wifi_led.on();
     s_retry_num = 0;
   }
 }

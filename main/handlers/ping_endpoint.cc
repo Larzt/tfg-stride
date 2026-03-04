@@ -15,7 +15,7 @@ PingHandler::PingHandler()
   _uri.user_ctx = nullptr;
 }
 
-httpd_uri_t *PingHandler::get_uri()
+httpd_uri_t *PingHandler::get_get_uri()
 {
   return &_uri;
 }
@@ -26,7 +26,7 @@ esp_err_t PingHandler::handler(httpd_req_t *req)
 
   std::string resp = "{" + kENDL;
   resp += "  \"status\": \"pong\"," + kENDL;
-  resp += "  \"led_state\": " + std::to_string(user_ping_led.get_level()) + kENDL;
+  resp += "  \"led_state\": " + std::to_string(user_ping_led.get()) + kENDL;
   resp += "}";
 
   httpd_resp_set_type(req, "application/json");

@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include "lexer.h"
 #include "output.h"
 #include "input.h"
@@ -8,8 +8,14 @@
 class Interpreter
 {
 public:
-  void execute(const std::vector<Token> &tokens);
+  void execute(const std::vector<std::vector<Token>> &tokens);
 
 private:
-  std::unordered_map<std::string, OutputPin *> outputs;
+  void executeSingle(const std::vector<Token> &tokens);
+  void executeOutput(const std::vector<Token> &tokens);
+  void executeWrite(const std::vector<Token> &tokens);
+  void executeWait(const std::vector<Token> &tokens);
+  size_t executeLoop(const std::vector<std::vector<Token>> &program, size_t currentIndex);
+
+  std::map<std::string, OutputPin *> outputs;
 };

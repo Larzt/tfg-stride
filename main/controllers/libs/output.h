@@ -1,23 +1,24 @@
 #pragma once
 #include "pin_base.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include "driver/gpio.h"
 
 class OutputPin : public PinBase
 {
 public:
-  using PinBase::PinBase;
+  OutputPin(gpio_num_t pin, bool active_low = false)
+      : PinBase(pin), _active_low(active_low), _state(false) {}
 
   void init() override;
 
+  void on();
+  void off();
   void toggle();
-  inline int get_level() { return _state; }
-  void turn(bool state);
+  void set(bool state); // true = ON, false = OFF
+  bool get() const { return _state; }
 
 private:
-  inline void set_level(int level) { gpio_set_level(_pin, level); }
+  void apply();
 
-  bool _is_pull_up;
-  int _state;
+  bool _active_low; // true si el dispositivo es activo en bajo
+  bool _state;      // estado lógico real (ON/OFF)
 };
