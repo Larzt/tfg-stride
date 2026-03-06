@@ -5,8 +5,8 @@
 class OutputPin : public PinBase
 {
 public:
-  OutputPin(gpio_num_t pin, bool active_low = false)
-      : PinBase(pin), _active_low(active_low), _state(false) {}
+  OutputPin(gpio_num_t pin, bool state = false, bool active_low = false)
+      : PinBase(pin), _state(state), _active_low(active_low) {}
 
   void init() override;
 
@@ -19,6 +19,6 @@ public:
 private:
   void apply();
 
-  bool _active_low; // true si el dispositivo es activo en bajo
   bool _state;      // estado lógico real (ON/OFF)
+  bool _active_low; // true si el dispositivo es activo en bajo
 };

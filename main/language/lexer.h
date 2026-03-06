@@ -18,6 +18,9 @@ enum class TokenType
   READ,
 
   // FLOW CONTROL
+  IF,
+  ELSE,
+  ENDIF,
   LOOP,
   DLOOP,
   WAIT,
@@ -52,6 +55,9 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"read", TokenType::READ},
 
     // FLOW CONTROL
+    {"if", TokenType::IF},
+    {"else", TokenType::ELSE},
+    {"endif", TokenType::ENDIF},
     {"loop", TokenType::LOOP},
     {"dloop", TokenType::DLOOP},
     {"wait", TokenType::WAIT},
@@ -62,6 +68,9 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"sda", TokenType::SDA},
     {"scl", TokenType::SCL},
 
+    // OTHERS
+    {"->", TokenType::ARROW},
+    {"=", TokenType::EQUAL},
     {"on", TokenType::VALUE},
     {"off", TokenType::VALUE}};
 

@@ -19,7 +19,7 @@
 #include "output.h"
 #include "main.h"
 
-#define TIME_PRESSED 5000
+#define TIME_PRESSED 3000
 
 #define LED_MODE GPIO_NUM_26
 #define BUTTON_MODE GPIO_NUM_16
@@ -45,7 +45,8 @@ void main_task(void *pvParameters)
         {
             ESP_LOGI("SYSTEM", "Cambio de modo recibido");
 
-            if (led_state == 1)
+            // LED off when is dev mode
+            if (led_state == 0)
             {
                 server->set_dev_mode(DEV);
                 ESP_LOGI("SYSTEM", "Modo DEV activado");
@@ -68,7 +69,7 @@ void main_task(void *pvParameters)
 void button_task(void *pvParameters)
 {
     InputPin mode_button(BUTTON_MODE);
-    OutputPin mode_led(LED_MODE);
+    OutputPin mode_led(LED_MODE, true);
 
     mode_button.init();
     mode_led.init();
@@ -110,15 +111,13 @@ void button_reload_task(void *pvParameters)
     {
         if (reloadButton.wait_for_long_press(TIME_PRESSED))
         {
-            ESP_LOGI("BUTTON", "Creando tarea SD read...");
-            xTaskCreatePinnedToCore(
-                sd_read_again_task,
-                "SDReadTask",
-                4096,
-                NULL,
-                5,
-                NULL,
-                1);
+            ESP_LOGI("BUTTON", "Recargando programa");
+
+            Interpreter::Instance().stop_loop();
+            if (sdReadTaskHandle != NULL)
+            {
+                xTaskNotifyGive(sdReadTaskHandle);
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -129,86 +128,46 @@ void button_reload_task(void *pvParameters)
    ============================================================ */
 void sd_read_task(void *pvParameters)
 {
-    Interpreter interpreter;
+    auto &interpreter = Interpreter::Instance();
+
     std::vector<std::vector<Token>> programBuffer;
 
-    ESP_LOGI("SD", "Esperando señal para leer SD...");
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    ESP_LOGI("SD", "Leyendo archivo program.str...");
-
-    FILE *f = fopen("/sdcard/program.str", "r");
-    if (!f)
+    while (true)
     {
-        ESP_LOGW("SD", "Archivo no existe o no se pudo abrir");
-        vTaskDelete(NULL);
-        return;
-    }
+        ESP_LOGI("SD", "Esperando señal para ejecutar programa...");
 
-    programBuffer.clear();
+        // Aquí la tarea se duerme completamente
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    char line[128];
-    int lineNumber = 0;
-    while (fgets(line, sizeof(line), f))
-    {
-        lineNumber++;
-        auto tokens = Tokenize(line);
-        if (!tokens.empty())
+        interpreter.stop_loop(); // rompe loops infinitos si existen
+
+        ESP_LOGI("SD", "Leyendo archivo program.str...");
+
+        FILE *f = fopen("/sdcard/program.str", "r");
+        if (!f)
         {
-            programBuffer.push_back(tokens);
+            ESP_LOGW("SD", "Archivo no encontrado");
+            continue;
         }
-    }
 
-    fclose(f);
-    ESP_LOGI("SD", "Programa cargado en memoria (%d lineas)", programBuffer.size());
+        programBuffer.clear();
 
-    interpreter.execute(programBuffer);
-    ESP_LOGI("SD", "Ejecución completada");
-
-    vTaskDelete(NULL);
-}
-
-void sd_read_again_task(void *pvParameters)
-{
-    Interpreter interpreter;
-    std::vector<std::vector<Token>> programBuffer;
-
-    ESP_LOGI("SD", "Leyendo archivo program.str...");
-
-    FILE *f = fopen("/sdcard/program.str", "r");
-    if (!f)
-    {
-        ESP_LOGW("SD", "Archivo no existe o no se pudo abrir");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    programBuffer.clear();
-
-    char line[128];
-    int lineNumber = 0;
-    while (fgets(line, sizeof(line), f))
-    {
-        lineNumber++;
-        ESP_LOGI("SD", "Linea %d leida: %s", lineNumber, line);
-
-        auto tokens = Tokenize(line);
-        if (!tokens.empty())
+        char line[128];
+        while (fgets(line, sizeof(line), f))
         {
-            programBuffer.push_back(tokens);
-            ESP_LOGI("SD", "Linea %d almacenada (%d tokens)", lineNumber, tokens.size());
+            auto tokens = Tokenize(line);
+            if (!tokens.empty())
+                programBuffer.push_back(tokens);
         }
+
+        fclose(f);
+
+        ESP_LOGI("SD", "Programa cargado (%d lineas)", programBuffer.size());
+
+        interpreter.execute(programBuffer);
+
+        ESP_LOGI("SD", "Programa terminado");
     }
-
-    fclose(f);
-
-    ESP_LOGI("SD", "Programa cargado en memoria (%d lineas)", programBuffer.size());
-
-    interpreter.execute(programBuffer);
-
-    ESP_LOGI("SD", "Ejecución completada");
-
-    vTaskDelete(NULL);
 }
 
 /* ============================================================

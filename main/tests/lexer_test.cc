@@ -87,16 +87,59 @@ void _4testTokenizer()
   check(tokens[6].value, std::string("temp"), "tokens[6].value");
 }
 
+void _5testArrowAssignment()
+{
+  std::cout << RESET << "Test 5: Arrow assignment (value -> var)" << std::endl;
+
+  std::string line = "3 -> t";
+
+  auto tokens = Tokenize(line);
+
+  auto expectedSize = static_cast<std::vector<Token>::size_type>(3);
+  check(tokens.size(), expectedSize, "tokens.size()");
+
+  check(tokens[0].type, TokenType::NUMBER, "tokens[0].type");
+  check(tokens[0].value, std::string("3"), "tokens[0].value");
+
+  check(tokens[1].type, TokenType::ARROW, "tokens[1].type");
+  check(tokens[1].value, std::string("->"), "tokens[1].value");
+
+  check(tokens[2].type, TokenType::IDENTIFIER, "tokens[2].type");
+  check(tokens[2].value, std::string("t"), "tokens[2].value");
+}
+
+void _6testEqualAssignment()
+{
+  std::cout << RESET << "Test 6: Equal assignment (var = value)" << std::endl;
+
+  std::string line = "T_RAW=3";
+
+  auto tokens = Tokenize(line);
+
+  auto expectedSize = static_cast<std::vector<Token>::size_type>(3);
+  check(tokens.size(), expectedSize, "tokens.size()");
+
+  check(tokens[0].type, TokenType::IDENTIFIER, "tokens[0].type");
+  check(tokens[0].value, std::string("T_RAW"), "tokens[0].value");
+
+  check(tokens[1].type, TokenType::EQUAL, "tokens[1].type");
+  check(tokens[1].value, std::string("="), "tokens[1].value");
+
+  check(tokens[2].type, TokenType::NUMBER, "tokens[2].type");
+  check(tokens[2].value, std::string("3"), "tokens[2].value");
+}
+
 int main()
 {
   _1testTokenizer();
   _2testTokenizer();
   _3testTokenizer();
   _4testTokenizer();
+  _5testArrowAssignment();
+  _6testEqualAssignment();
 
   std::cout << RESET << passed << " PASSED" << std::endl;
   std::cout << failed << " FAILED" << std::endl;
 
   return failed > 0 ? 1 : 0;
-  return 0;
 }

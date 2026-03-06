@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "esp_log.h"
 
 Token GenerateToken(const std::string &word)
 {
@@ -31,26 +32,34 @@ Token GenerateToken(const std::string &word)
 std::vector<Token> Tokenize(const std::string &line)
 {
   std::vector<Token> tokens;
-  std::string word;
+  std::string word = "";
 
   for (size_t i = 0; i < line.size(); i++)
   {
+
     char letter = line[i];
 
-    // Arrow asign
+    // Arrow assign '->' detectado
     if (letter == '-' && i + 1 < line.size() && line[i + 1] == '>')
     {
-      tokens.emplace_back(TokenType::ARROW, "->");
-      i++; // saltar el '>'
-    }
-    else if (letter == '=')
-    {
+      // Si hay algo acumulado antes, tokenizarlo
       if (!word.empty())
       {
         tokens.emplace_back(GenerateToken(word));
         word.clear();
       }
 
+      tokens.emplace_back(TokenType::ARROW, "->");
+      i++; // saltar el '>'
+    }
+    else if (letter == '=')
+    {
+      // Si hay algo acumulado antes, tokenizarlo
+      if (!word.empty())
+      {
+        tokens.emplace_back(GenerateToken(word));
+        word.clear();
+      }
       tokens.emplace_back(TokenType::EQUAL, "=");
     }
     else if (isspace(letter))
@@ -67,6 +76,7 @@ std::vector<Token> Tokenize(const std::string &line)
     }
   }
 
+  // Token final si queda algo
   if (!word.empty())
   {
     tokens.emplace_back(GenerateToken(word));
@@ -112,8 +122,33 @@ std::ostream &operator<<(std::ostream &out, TokenType type)
   case TokenType::VALUE:
     out << "VALUE";
     break;
+
+    // FLOW CONTROL
+  case TokenType::IF:
+    out << "IF";
+    break;
+  case TokenType::ELSE:
+    out << "ELSE";
+    break;
+  case TokenType::ENDIF:
+    out << "ENDIF";
+    break;
+  case TokenType::LOOP:
+    out << "LOOP";
+    break;
+  case TokenType::DLOOP:
+    out << "DLOOP";
+    break;
+  case TokenType::WAIT:
+    out << "WAIT";
+    break;
+
+    // Assign
   case TokenType::EQUAL:
     out << "EQUAL";
+    break;
+  case TokenType::ARROW:
+    out << "ARROW";
     break;
 
   // I2C
@@ -131,9 +166,6 @@ std::ostream &operator<<(std::ostream &out, TokenType type)
     break;
   case TokenType::HEX_NUMBER:
     out << "HEX_NUMBER";
-    break;
-  case TokenType::ARROW:
-    out << "ARROW";
     break;
 
   default:

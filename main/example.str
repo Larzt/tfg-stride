@@ -16,3 +16,10 @@ I2C READ 0x76 0xFA 3 -> T_RAW
 # Convertir a grados (simplificado)
 TEMP = (T_RAW / 5120)
 PRINT TEMP
+
+
+IF=TEMP > 5
+...
+ELSE
+...
+ENDIF

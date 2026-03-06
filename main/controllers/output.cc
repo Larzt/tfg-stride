@@ -8,7 +8,6 @@ void OutputPin::init()
   gpio_reset_pin(_pin);
   gpio_set_direction(_pin, GPIO_MODE_OUTPUT);
 
-  _state = false; // inicia apagado
   apply();
 
   ESP_LOGI(TAG, "Pin %d inicializado", _pin);
