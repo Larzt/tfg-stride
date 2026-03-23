@@ -12,3 +12,47 @@ El proyecto implementa las siguientes funcionalidades iniciales:
 - **Conectividad Híbrida:** Inicialización de la interfaz WiFi en **modo AP (Access Point) + STA (Station)**.
 - **Servidor HTTP Ligero:** Servidor implementado para la interacción remota y la obtención de datos.
 - **Control de Hardware:** Controladores separados para el hardware.
+
+## 🌐 Configuración de Conectividad
+
+El dispositivo STRIDE implementa un sistema de gestión de red dual, diferenciando entre la configuración estática de desarrollo y la configuración dinámica para el usuario final.
+
+#### Configuración de Desarrollo
+
+Para facilitar las pruebas durante el desarrollo del firmware, se utiliza un archivo `config.json` embebido en el binario. Este define las credenciales por defecto:
+
+```json
+{
+  "ESPAP": {
+    "SSID": "STRIDE_Dev_AP",
+    "PASS": "stride1234"
+  },
+  "LOCAL": {
+    "SSID": "Mi_Red_Pruebas",
+    "PASS": "password_pruebas"
+  }
+}
+```
+
+> [!NOTE]
+> Este archivo solo se utiliza como fallback (variables iniciales) o durante el ciclo de depuracion en el laboratio.
+
+### Configuraion para el Usuario Final
+
+Pensando en la versatilidad del dispositivo, el suuario no necesita modificar el codigo fuente. El flujo de conexion es el siguiente:
+
+1. Modo SoftAP: Al encenderse, el ESP32 crea su propia red Wi-Fi (Punto de Acceso).
+2. Interfaz de Configuración: El usuario se conecta a dicha red mediante un smartphone o PC.
+3. Persistencia en NVS: A través del servidor HTTP embebido, el usuario introduce las credenciales de su red local. Estas se guardan permanentemente en la memoria NVS (Non-Volatile Storage).
+4. Auto-Conexión: En los siguientes reinicios, el dispositivo priorizará los datos de la NVS, conectándose automáticamente a la red del usuario sin intervención manual.
+
+### Gestión de Archivos (Web UI)
+
+El sistema expone una interfaz web para la gestión de módulos y scripts:
+
+- **Browser (`/files`)**: Permite navegar por la raíz de la tarjeta SD, listando archivos detectados.
+- **Editor (`/editor?file=...`)**: Interfaz web con un área de texto (textarea) que permite modificar en tiempo real el código fuente de los programas `.str` almacenados.
+- **Visualizador (`/view`)**: Renderiza el contenido del archivo en modo solo lectura para depuración rápida.
+
+> [!TIP]
+> **Optimización de Memoria:** Los endpoints de lectura (`/view` y `/editor`) utilizan transferencia de datos por fragmentos (_chunked transfer_). Esto permite servir archivos de gran tamaño almacenados en la SD sin exceder el límite de memoria heap del microcontrolador.

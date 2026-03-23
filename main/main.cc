@@ -19,6 +19,12 @@
 #include "output.h"
 #include "main.h"
 
+// TIME
+// #include <time.h>
+// #include <sys/time.h>
+// #include "esp_netif_sntp.h"
+// #include "esp_sntp.h"
+
 #define TIME_PRESSED 3000
 
 #define LED_MODE GPIO_NUM_26
@@ -218,7 +224,9 @@ void sd_task(void *pvParameters)
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024};
+        .allocation_unit_size = 16 * 1024,
+        .disk_status_check_enable = true,
+        .use_one_fat = false};
 
     sdmmc_card_t *card;
 
@@ -242,12 +250,38 @@ void sd_task(void *pvParameters)
 }
 
 /* ============================================================
+   INITIALIZE TIME (logs) !!Not working
+   ============================================================ */
+// void initTime()
+// {
+//     ESP_LOGI("TIME", "Inicializando SNTP...");
+
+//     // Configuración para IDF 5.x
+//     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+
+//     // Inicialización
+//     esp_netif_sntp_init(&config);
+
+//     // Esperar sincronización (opcional, máximo 10s)
+//     if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK)
+//     {
+//         ESP_LOGW("TIME", "No se pudo sincronizar la hora");
+//     }
+//     else
+//     {
+//         ESP_LOGI("TIME", "Hora sincronizada");
+//     }
+// }
+
+/* ============================================================
    APP MAIN
    ============================================================ */
 extern "C" void app_main(void)
 {
     WifiHandler wifi;
     wifi.init();
+
+    // initTime();
 
     Server *server = new Server();
     server->start();

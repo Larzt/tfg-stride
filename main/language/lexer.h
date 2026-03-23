@@ -8,6 +8,7 @@
 enum class TokenType
 {
   // BASICS
+  FILE,
   OUTPUT,
   INPUT,
   PIN,
@@ -16,6 +17,7 @@ enum class TokenType
   NAME,
   WRITE,
   READ,
+  PRINT,
 
   // FLOW CONTROL
   IF,
@@ -45,6 +47,7 @@ enum class TokenType
 };
 
 static const std::unordered_map<std::string, TokenType> keywords = {
+    {"file", TokenType::FILE},
     {"output", TokenType::OUTPUT},
     {"input", TokenType::INPUT},
     {"led", TokenType::LED},
@@ -53,6 +56,7 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"name", TokenType::NAME},
     {"write", TokenType::WRITE},
     {"read", TokenType::READ},
+    {"print", TokenType::PRINT},
 
     // FLOW CONTROL
     {"if", TokenType::IF},

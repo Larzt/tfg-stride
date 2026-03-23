@@ -31,8 +31,20 @@ httpd_uri_t *SdEditorHandler::get_post_uri()
 
 esp_err_t SdEditorHandler::get_handler(httpd_req_t *req)
 {
+  char filepath[64] = FILE_PATH;
+  char query[128];
+
+  if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
+  {
+    char filename[32];
+    if (httpd_query_key_value(query, "file", filename, sizeof(filename)) == ESP_OK)
+    {
+      snprintf(filepath, sizeof(filepath), "/sdcard/%s", filename);
+    }
+  }
+
   std::stringstream file_content;
-  FILE *f = fopen(FILE_PATH, "r");
+  FILE *f = fopen(filepath, "r");
 
   if (f != NULL)
   {

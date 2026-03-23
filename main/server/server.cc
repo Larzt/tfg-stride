@@ -9,6 +9,7 @@
 #include "config_endpoint.h"
 #include "sd_editor_endpoint.h"
 #include "sd_reader_endpoint.h"
+#include "sd_browser_endpoint.h"
 
 static const char *TAG = "SERVER";
 
@@ -80,7 +81,8 @@ void Server::load_handlers()
     this->add_handler(new StatusHandler());
     this->add_handler(new ConfigHandler());
     this->add_handler(new SdEditorHandler());
-    this->add_handler(new SdReaderHandler("/sdcard/program.str"));
+    this->add_handler(new SdBrowserHandler());
+    this->add_handler(new SdReaderHandler());
   }
   else
   {

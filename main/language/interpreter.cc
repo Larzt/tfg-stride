@@ -3,6 +3,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "parseHex.h"
+#include "storage.h"
+// #include "time_utils.h"
+
 // usar std::map<TokenType, std::function<void(const std::vector<Token>&)>> dispatch;
 
 void Interpreter::execute(const std::vector<std::vector<Token>> &program)
@@ -29,13 +33,17 @@ void Interpreter::execute(const std::vector<std::vector<Token>> &program)
       }
       else if (tokens[1].type == TokenType::EQUAL)
       {
-        // executeArrow(tokens);
+        executeEqual(tokens);
         continue;
       }
     }
 
     switch (tokens[0].type)
     {
+    case TokenType::FILE:
+      executeLogfile(tokens);
+      break;
+
     case TokenType::OUTPUT:
       executeOutput(tokens);
       break;
@@ -52,6 +60,14 @@ void Interpreter::execute(const std::vector<std::vector<Token>> &program)
       executeArrow(tokens);
       break;
 
+    case TokenType::PRINT:
+      executePrint(tokens);
+      break;
+
+    case TokenType::I2C:
+      executeI2C(tokens);
+      break;
+
     case TokenType::LOOP:
       index = executeLoop(program, index);
       break;
@@ -65,47 +81,13 @@ void Interpreter::execute(const std::vector<std::vector<Token>> &program)
     default:
     {
       std::stringstream ss;
-      ss << tokens[0].type; // esto usará tu operator<<
+      ss << tokens[0].type;
       ESP_LOGW("Interpreter", "Unknown command. Type=%s, Value='%s'",
                ss.str().c_str(), tokens[0].value.c_str());
       break;
     }
     }
   }
-}
-
-void Interpreter::executeArrow(const std::vector<Token> &tokens)
-{
-  ESP_LOGI("Interpreter", "Arrow assignment detected");
-
-  // Sintaxis esperada: <value> -> <var>
-  if (tokens.size() < 3)
-  {
-    std::string found = "";
-    for (const auto &t : tokens)
-    {
-      found += t.value + " ";
-    }
-
-    ESP_LOGE("Interpreter", "Arrow syntax error: se esperaba <value> -> <var>, se encontró: %s", found.c_str());
-    return;
-  }
-
-  std::string valueStr = tokens[0].value;
-  std::string varName = tokens[2].value;
-
-  char *endPtr = nullptr;
-  long value = std::strtol(valueStr.c_str(), &endPtr, 10);
-
-  if (endPtr == valueStr.c_str() || *endPtr != '\0')
-  {
-    ESP_LOGE("Interpreter", "Arrow assignment: valor no válido: %s", valueStr.c_str());
-    return;
-  }
-
-  variables[varName] = value;
-
-  ESP_LOGI("Interpreter", "Arrow assignment: %d -> %s", value, varName.c_str());
 }
 
 void Interpreter::executeSingle(const std::vector<Token> &tokens)
@@ -127,10 +109,125 @@ void Interpreter::executeSingle(const std::vector<Token> &tokens)
     executeWait(tokens);
     break;
 
+  case TokenType::PRINT:
+    executePrint(tokens);
+    break;
+
   default:
     ESP_LOGW("Interpreter", "Unknown command inside block");
     break;
   }
+}
+
+void Interpreter::executeLogfile(const std::vector<Token> &tokens)
+{
+
+  ESP_LOGI("Interpreter FILE", "File assigment detected");
+
+  // Sintaxis esperada: FILE <name>
+  if (tokens.size() < 2)
+  {
+    std::string found = "";
+    for (const auto &t : tokens)
+    {
+      found += t.value + " ";
+    }
+
+    ESP_LOGE("Interpreter FILE", "File syntax error: se esperaba FILE <name>, se encontró: %s", found.c_str());
+    return;
+  }
+
+  std::string fileName = tokens[1].value;
+
+  char *endPtr = nullptr;
+  long value = std::strtol(fileName.c_str(), &endPtr, 10);
+
+  if (endPtr == fileName.c_str() || *endPtr != '\0')
+  {
+    ESP_LOGE("Interpreter FILE", "File assignment: valor no válido: %s", fileName.c_str());
+    return;
+  }
+
+  logFile = value;
+
+  ESP_LOGI("Interpreter FILE", "Assigned logfile for this program: ", fileName.c_str());
+}
+
+void Interpreter::executeArrow(const std::vector<Token> &tokens)
+{
+  ESP_LOGI("Interpreter ARROW", "Arrow assignment detected");
+
+  // Sintaxis esperada: <value> -> <var>
+  if (tokens.size() < 3)
+  {
+    std::string found = "";
+    for (const auto &t : tokens)
+    {
+      found += t.value + " ";
+    }
+
+    ESP_LOGE("Interpreter ARROW", "Arrow syntax error: se esperaba <value> -> <var>, se encontró: %s", found.c_str());
+    return;
+  }
+
+  std::string valueStr = "";
+  std::string varName = "";
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    if (tokens[i].type == TokenType::ARROW)
+    {
+      valueStr = tokens[i - 1].value;
+      varName = tokens[i + 1].value;
+    }
+  }
+
+  char *endPtr = nullptr;
+  long value = std::strtol(valueStr.c_str(), &endPtr, 10);
+
+  if (endPtr == valueStr.c_str() || *endPtr != '\0')
+  {
+    ESP_LOGE("Interpreter ARROW", "Arrow assignment: valor no válido: %s", valueStr.c_str());
+    return;
+  }
+
+  variables[varName] = value;
+
+  ESP_LOGI("Interpreter ARROW", "Arrow assignment: %d -> %s", value, varName.c_str());
+}
+
+void Interpreter::executeEqual(const std::vector<Token> &tokens)
+{
+  ESP_LOGI("Interpreter EQUAL", "Equal assignment detected");
+
+  // Sintaxis esperada: <var> = <value>
+  if (tokens.size() < 3)
+  {
+    std::string found = "";
+    for (const auto &t : tokens)
+    {
+      found += t.value + " ";
+    }
+
+    ESP_LOGE("Interpreter EQUAL", "Equal syntax error: se esperaba <var> = <value>, se encontró: %s", found.c_str());
+    return;
+  }
+
+  std::string varName = tokens[0].value;
+  std::string valueStr = tokens[2].value;
+
+  char *endPtr = nullptr;
+  long value = std::strtol(valueStr.c_str(), &endPtr, 10);
+
+  if (endPtr == valueStr.c_str() || *endPtr != '\0')
+  {
+    ESP_LOGE("Interpreter EQUAL", "Equal assignment: valor no válido: %s", valueStr.c_str());
+    return;
+  }
+
+  variables[varName] = value;
+
+  ESP_LOGI("Interpreter EQUAL", "Equal assignment: %d = %s", varName.c_str(), value);
 }
 
 void Interpreter::executeOutput(const std::vector<Token> &tokens)
@@ -208,6 +305,36 @@ void Interpreter::executeWait(const std::vector<Token> &tokens)
   ESP_LOGI("Interpreter", "Waiting %.2f seconds...", seconds);
 
   vTaskDelay(pdMS_TO_TICKS(seconds * 1000));
+}
+
+void Interpreter::executePrint(const std::vector<Token> &tokens)
+{
+  if (tokens.size() < 2)
+  {
+    ESP_LOGE("Interpreter PRINT", "PRINT without value");
+    return;
+  }
+  std::string output;
+
+  const Token &valToken = tokens[1];
+
+  if (variables.find(valToken.value) != variables.end())
+  {
+    output = std::to_string(variables[valToken.value]);
+  }
+  else
+  {
+    output = valToken.value;
+  }
+
+  // char timeStr[32];
+  // getTimeString(timeStr, sizeof(timeStr));
+  // std::string finalLine = "[" + std::string(timeStr) + "]: " + output + "\n";
+
+  std::string finalLine = "[HORA]: " + output + "\n";
+  ESP_LOGI("Interpreter PRINT", "%s", finalLine.c_str());
+
+  appendToFile(logFile, finalLine);
 }
 
 size_t Interpreter::executeLoop(const std::vector<std::vector<Token>> &program, size_t currentIndex)
@@ -361,4 +488,120 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
   return blockEnd;
 
   return size_t();
+}
+
+void Interpreter::executeI2C(const std::vector<Token> &tokens)
+{
+  if (tokens.size() < 2)
+  {
+    ESP_LOGE("Interpreter I2C", "Incomplete I2C command");
+    return;
+  }
+
+  switch (tokens[1].type)
+  {
+  case TokenType::INIT:
+    executeI2CInit(tokens);
+    break;
+
+  case TokenType::WRITE:
+    executeI2CWrite(tokens);
+    break;
+
+  case TokenType::READ:
+    executeI2CRead(tokens);
+    break;
+
+  default:
+    ESP_LOGW("Interpreter I2C", "Unknown I2C subcommand");
+    break;
+  }
+}
+
+void Interpreter::executeI2CInit(const std::vector<Token> &tokens)
+{
+  int sda = -1;
+  int scl = -1;
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    bool limit = i + 1 < tokens.size();
+    if (tokens[i].type == TokenType::SDA && limit)
+    {
+      sda = std::stoi(tokens[i + 1].value);
+    }
+
+    if (tokens[i].type == TokenType::SDA && limit)
+    {
+      scl = std::stoi(tokens[i + 1].value);
+    }
+  }
+
+  if (sda == -1 || scl == -1)
+  {
+    ESP_LOGE("Interpreter I2C", "Invalid INIT syntaxis");
+    return;
+  }
+
+  ESP_LOGI("Interpreter I2C", "Init I2C SDA=%d SCL=%d", sda, scl);
+
+  // Inicializar el I2C con el driver
+  // i2c_master_init((gpio_num_t)sda, (gpio_num_t)scl);
+}
+
+void Interpreter::executeI2CWrite(const std::vector<Token> &tokens)
+{
+  if (tokens.size() < 5)
+  {
+    ESP_LOGE("Interpreter I2C", "Invalid WRITE syntax");
+    return;
+  }
+
+  int addr = parseNumber(tokens[2].value);
+  int reg = parseNumber(tokens[3].value);
+  int data = parseNumber(tokens[4].value);
+
+  ESP_LOGI("Interpreter I2C", "WRITE addr=0x%X reg=0x%X data=0x%X",
+           addr, reg, data);
+
+  // i2c_write_byte(addr, reg, data);
+}
+
+void Interpreter::executeI2CRead(const std::vector<Token> &tokens)
+{
+  // Sintaxis mínima: I2C READ addr reg bytes
+  // Sintaxis opcional: I2C READ addr reg bytes => var
+  if (tokens.size() < 5)
+  {
+    ESP_LOGE("Interpreter I2C", "Invalid READ syntax");
+    return;
+  }
+
+  int addr = parseNumber(tokens[2].value);
+  int reg = parseNumber(tokens[3].value);
+  int bytes = std::stoi(tokens[4].value);
+
+  ESP_LOGI("Interpreter I2C", "READ addr=0x%X reg=0x%X bytes=%d", addr, reg, bytes);
+
+  int result = 1234; // placeholder: i2c_read_bytes(addr, reg, bytes);
+
+  std::string varName = "";
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    if (tokens[i].type == TokenType::ARROW && i + 1 < tokens.size())
+    {
+      varName = tokens[i + 1].value;
+    }
+  }
+
+  if (varName != "")
+  {
+    variables[varName] = result;
+    ESP_LOGI("Interpreter I2C", "Stored %d in %s", result, varName.c_str());
+  }
+  else
+  {
+    ESP_LOGI("Interpreter I2C", "Read result (not stored): %d", result);
+  }
 }

@@ -13,6 +13,7 @@ idf_component_register(
 
     INCLUDE_DIRS
         "."
+        "./log"
         "./language"
         "./wifi"
         "./server"

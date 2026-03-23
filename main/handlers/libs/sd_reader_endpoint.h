@@ -6,7 +6,7 @@
 class SdReaderHandler : public Handler
 {
 public:
-  SdReaderHandler(const std::string &path);
+  SdReaderHandler();
 
   httpd_uri_t *get_get_uri() override; // GET handler
   virtual bool enabled_in_ap_mode() const override { return true; }

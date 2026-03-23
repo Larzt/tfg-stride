@@ -3,12 +3,14 @@
 #include <sstream>
 #include "esp_log.h"
 
-SdReaderHandler::SdReaderHandler(const std::string &path) : _file_path(path)
+#define SD_BASE_PATH "/sdcard"
+
+SdReaderHandler::SdReaderHandler()
 {
-  _get_uri.uri = "/read_sd";
+  _get_uri.uri = "/view";
   _get_uri.method = HTTP_GET;
   _get_uri.handler = &SdReaderHandler::get_handler;
-  _get_uri.user_ctx = this;
+  _get_uri.user_ctx = nullptr;
 }
 
 httpd_uri_t *SdReaderHandler::get_get_uri()
@@ -18,30 +20,46 @@ httpd_uri_t *SdReaderHandler::get_get_uri()
 
 esp_err_t SdReaderHandler::get_handler(httpd_req_t *req)
 {
-  // Recuperar la instancia de la clase desde user_ctx
-  SdReaderHandler *self = (SdReaderHandler *)req->user_ctx;
-  if (!self)
-    return ESP_FAIL;
+  char query[128];
+  char filepath[128];
+  bool file_found = false;
 
-  FILE *f = fopen(self->_file_path.c_str(), "r");
-  if (!f)
+  if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
   {
-    ESP_LOGE("SD_READER", "No se pudo abrir archivo: %s", self->_file_path.c_str());
-    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Archivo no encontrado");
+    char filename[64];
+    if (httpd_query_key_value(query, "file", filename, sizeof(filename)) == ESP_OK)
+    {
+      snprintf(filepath, sizeof(filepath), "%s/%s", SD_BASE_PATH, filename);
+      file_found = true;
+    }
+  }
+
+  if (!file_found)
+  {
+    ESP_LOGW("SD_READER", "Petición sin parámetro 'file'");
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Falta el parámetro 'file'");
     return ESP_FAIL;
   }
 
-  std::stringstream file_content;
+  FILE *f = fopen(filepath, "r");
+  if (!f)
+  {
+    ESP_LOGE("SD_READER", "Error al abrir: %s", filepath);
+    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Archivo no encontrado en SD");
+    return ESP_FAIL;
+  }
+
+  httpd_resp_set_type(req, "text/plain; charset=utf-8");
+
   char line[256];
   while (fgets(line, sizeof(line), f))
   {
-    file_content << line;
+    httpd_resp_sendstr_chunk(req, line);
   }
+
+  httpd_resp_sendstr_chunk(req, NULL);
   fclose(f);
 
-  std::string response = file_content.str();
-  httpd_resp_set_type(req, "text/plain");
-  httpd_resp_send(req, response.c_str(), response.length());
-
+  ESP_LOGI("SD_READER", "Archivo servido: %s", filepath);
   return ESP_OK;
 }
