@@ -3,7 +3,7 @@
 #include "lexer.h"
 #include "check.h"
 
-// g++ -std=c++17 tests/lexer_test.cc language/lexer.cc -Ilanguage -Iutils -o lexer_test
+// g++ -std=c++17 tests/lexer_test.cc language/lexer.cc -Ilanguage -Iutils -o lexer_test -D TEST
 
 void _1testTokenizer()
 {

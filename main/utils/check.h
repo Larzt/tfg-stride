@@ -17,7 +17,7 @@ void check(const T &actual, const T &expected, const std::string &msg)
   }
   else
   {
-    std::cout << GREEN << "PASSED: " << msg << std::endl;
+    std::cout << GREEN << "PASSED: " << msg << RESET << std::endl;
     passed++;
   }
 }

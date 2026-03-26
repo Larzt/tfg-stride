@@ -1,5 +1,7 @@
 #include "lexer.h"
+#ifndef TEST
 #include "esp_log.h"
+#endif
 
 Token GenerateToken(const std::string &word)
 {
