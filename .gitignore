@@ -4,7 +4,6 @@ docker_build.sh
 build/
 sdkconfig
 sdkconfig.old
-sdkconfig.defaults
 
 # Bootloader & binaries
 *.bin
