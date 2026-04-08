@@ -1,5 +1,5 @@
 #include "wifi_config_handler.h"
-#include "WifiHandler.h"
+#include "network.h"
 
 #include <fstream>
 #include <sstream>
@@ -38,7 +38,7 @@ esp_err_t WifiConfigHandler::get_handler(httpd_req_t *req)
     std::string message = "";
 
     // Cargar credenciales desde NVS
-    WifiHandler::load_wifi_credentials(ssid, password);
+    Network::load_wifi_credentials(ssid, password);
 
     // Detectar mensaje ?saved=1
     char query[64];
@@ -132,7 +132,7 @@ esp_err_t WifiConfigHandler::post_handler(httpd_req_t *req)
     }
 
     // Guardar credenciales en NVS
-    WifiHandler::save_wifi_credentials(ssid, password);
+    Network::save_wifi_credentials(ssid, password);
 
     // Redirigir a GET con mensaje
     httpd_resp_set_status(req, "303 See Other");

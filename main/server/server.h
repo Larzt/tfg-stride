@@ -1,5 +1,5 @@
 #pragma once
-#include "WifiHandler.h"
+#include "network.h"
 #include <vector>
 #include "esp_http_server.h"
 #include "handler.h"
@@ -21,7 +21,7 @@ public:
   void reset_handlers();
   inline bool is_dev_mode() { return _mode == DEV ? true : false; }
   inline void set_dev_mode(ServerMode mode) { _mode = mode; }
-  inline bool is_ap_mode() { return WifiHandler::current_mode() == WifiMode::AP; }
+  inline bool is_ap_mode() { return Network::current_mode() == WifiMode::AP; }
 
 protected:
   virtual uint16_t port() const { return 80; }

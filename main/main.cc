@@ -1,4 +1,4 @@
-#include "WifiHandler.h"
+#include "network.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -278,7 +278,7 @@ void sd_task(void *pvParameters)
    ============================================================ */
 extern "C" void app_main(void)
 {
-    WifiHandler wifi;
+    Network wifi;
     wifi.init();
 
     // initTime();

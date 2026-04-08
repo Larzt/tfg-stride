@@ -1,0 +1,6 @@
+README.md
+sdkconfig.old
+sdkconfig
+.gitginore
+build/*
+main/build/*

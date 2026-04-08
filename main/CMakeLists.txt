@@ -15,7 +15,7 @@ idf_component_register(
         "."
         "./log"
         "./language"
-        "./wifi"
+        "./network"
         "./server"
         "./handlers"
         "./handlers/libs"

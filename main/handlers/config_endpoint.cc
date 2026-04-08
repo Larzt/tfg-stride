@@ -1,7 +1,7 @@
 #include <string>
 #include "utility.h"
 #include "config_endpoint.h"
-#include "WifiHandler.h"
+#include "network.h"
 
 ConfigHandler::ConfigHandler()
 {
@@ -21,7 +21,7 @@ esp_err_t ConfigHandler::handler(httpd_req_t *req)
   std::string ssid = "";
   std::string password = "";
 
-  WifiHandler::load_wifi_credentials(ssid, password);
+  Network::load_wifi_credentials(ssid, password);
 
   std::string resp = "{" + kENDL;
   resp += "  \"ESP_AP\": {" + kENDL;
