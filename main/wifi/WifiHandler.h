@@ -8,12 +8,22 @@
 // pins
 #include "output.h"
 
+enum WifiMode
+{
+  AP,
+  STA
+};
+
 class WifiHandler
 {
 public:
   WifiHandler();
   void init();
+  static bool load_wifi_credentials(std::string &ssid, std::string &password);
+  static void save_wifi_credentials(const std::string &ssid, const std::string &password);
+
   static OutputPin wifi_led;
+  static inline WifiMode current_mode() { return _mode; }
 
 private:
   static void
@@ -22,4 +32,5 @@ private:
 
   static const char *TAG;
   static int s_retry_num;
+  static WifiMode _mode;
 };

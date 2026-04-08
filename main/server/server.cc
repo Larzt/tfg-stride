@@ -1,7 +1,6 @@
 #include "server.h"
 
 #include "esp_log.h"
-#include "WifiHandler.h"
 
 #include "root_endpoint.h"
 #include "ping_endpoint.h"
@@ -10,6 +9,7 @@
 #include "sd_editor_endpoint.h"
 #include "sd_reader_endpoint.h"
 #include "sd_browser_endpoint.h"
+#include "wifi_config_handler.h"
 
 static const char *TAG = "SERVER";
 
@@ -75,6 +75,8 @@ void Server::reset_handlers()
 
 void Server::load_handlers()
 {
+  this->add_handler(new WifiConfigHandler());
+
   if (this->is_dev_mode())
   {
     ESP_LOGW("Server mode: ", "Dev mode");

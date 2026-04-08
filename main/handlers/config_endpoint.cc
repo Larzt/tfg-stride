@@ -1,7 +1,7 @@
 #include <string>
 #include "utility.h"
 #include "config_endpoint.h"
-#include "wifi_credentials.h"
+#include "WifiHandler.h"
 
 ConfigHandler::ConfigHandler()
 {
@@ -18,16 +18,19 @@ httpd_uri_t *ConfigHandler::get_get_uri()
 
 esp_err_t ConfigHandler::handler(httpd_req_t *req)
 {
-  wifi_credentials_t creds = get_wifi_credentials();
+  std::string ssid = "";
+  std::string password = "";
+
+  WifiHandler::load_wifi_credentials(ssid, password);
 
   std::string resp = "{" + kENDL;
   resp += "  \"ESP_AP\": {" + kENDL;
-  resp += "    \"SSID\": \"" + std::string(creds.ap_ssid) + "\"," + kENDL;
-  resp += "    \"PASS\": \"" + std::string(creds.ap_pass) + "\"" + kENDL;
+  resp += "    \"SSID\": \"" + std::string(ssid) + "\"," + kENDL;
+  resp += "    \"PASS\": \"" + std::string(password) + "\"" + kENDL;
   resp += "  }," + kENDL;
   resp += "  \"LOCAL\": {" + kENDL;
-  resp += "    \"SSID\": \"" + std::string(creds.local_ssid) + "\"," + kENDL;
-  resp += "    \"PASS\": \"" + std::string(creds.local_pass) + "\"" + kENDL;
+  resp += "    \"SSID\": \"" + std::string(ssid) + "\"," + kENDL;
+  resp += "    \"PASS\": \"" + std::string(password) + "\"" + kENDL;
   resp += "  }" + kENDL;
   resp += "}";
 

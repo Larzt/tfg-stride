@@ -8,7 +8,7 @@ class SdReaderHandler : public Handler
 public:
   SdReaderHandler();
 
-  httpd_uri_t *get_get_uri() override; // GET handler
+  httpd_uri_t *get_get_uri() override;
   virtual bool enabled_in_ap_mode() const override { return true; }
   virtual bool enabled_in_sta_mode() const override { return true; }
 
