@@ -1,5 +1,12 @@
 docker_build.sh
 
+# Archivos temporales de activación de ESP-IDF
+# Temporales de ESP-IDF
+esp_idf_activate_larzt/
+tmp*
+sdkconfig
+build/
+
 # === ESP-IDF build files ===
 build/
 sdkconfig
