@@ -226,7 +226,7 @@ void sd_task(void *pvParameters)
         .max_files = 5,
         .allocation_unit_size = 16 * 1024,
         .disk_status_check_enable = true,
-        .use_one_fat = false};
+        };
 
     sdmmc_card_t *card;
 

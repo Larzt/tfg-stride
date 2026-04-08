@@ -1,3 +1,5 @@
+docker_build.sh
+
 # === ESP-IDF build files ===
 build/
 sdkconfig

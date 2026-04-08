@@ -150,7 +150,7 @@ void Interpreter::executeLogfile(const std::vector<Token> &tokens)
 
   logFile = value;
 
-  ESP_LOGI("Interpreter FILE", "Assigned logfile for this program: ", fileName.c_str());
+  ESP_LOGI("Interpreter FILE", "Assigned logfile for this program: %s", fileName.c_str());
 }
 
 void Interpreter::executeArrow(const std::vector<Token> &tokens)
@@ -193,7 +193,7 @@ void Interpreter::executeArrow(const std::vector<Token> &tokens)
 
   variables[varName] = value;
 
-  ESP_LOGI("Interpreter ARROW", "Arrow assignment: %d -> %s", value, varName.c_str());
+  ESP_LOGI("Interpreter ARROW", "Arrow assignment: %ld -> %s", (long)value, varName.c_str());
 }
 
 void Interpreter::executeEqual(const std::vector<Token> &tokens)
@@ -227,7 +227,7 @@ void Interpreter::executeEqual(const std::vector<Token> &tokens)
 
   variables[varName] = value;
 
-  ESP_LOGI("Interpreter EQUAL", "Equal assignment: %d = %s", varName.c_str(), value);
+  ESP_LOGI("Interpreter EQUAL", "Equal assignment: %s = %ld", varName.c_str(), (long)value);
 }
 
 void Interpreter::executeOutput(const std::vector<Token> &tokens)
