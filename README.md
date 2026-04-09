@@ -50,7 +50,7 @@ Pensando en la versatilidad del dispositivo, el suuario no necesita modificar el
 
 El sistema expone una interfaz web para la gestión de módulos y scripts:
 
-- **Browser (`/files`)**: Permite navegar por la raíz de la tarjeta SD, listando archivos detectados.
+- **Browser (`browser`)**: Permite navegar por la raíz de la tarjeta SD, listando archivos detectados.
 - **Editor (`/editor?file=...`)**: Interfaz web con un área de texto (textarea) que permite modificar en tiempo real el código fuente de los programas `.str` almacenados.
 - **Visualizador (`/view`)**: Renderiza el contenido del archivo en modo solo lectura para depuración rápida.
 

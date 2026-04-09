@@ -36,6 +36,7 @@ enum class TokenType
   SCL,
 
   // LITERALS
+  STRING,
   NUMBER,
   HEX_NUMBER,
   IDENTIFIER, // Variables

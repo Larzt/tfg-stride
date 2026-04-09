@@ -32,6 +32,9 @@ httpd_handle_t Server::start()
 {
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.server_port = port();
+  config.max_req_hdr_len = 1024;   // Amplia el espacio del header
+  config.max_uri_handlers = 12;    // Asegura espacio para los endpoints
+  config.lru_purge_enable = true;  // Cierra conexiones viejas si se satura
 
   if (httpd_start(&_server, &config) != ESP_OK)
   {
@@ -75,29 +78,23 @@ void Server::reset_handlers()
 
 void Server::load_handlers()
 {
+  this->add_handler(new RootHandler());
   this->add_handler(new WifiConfigHandler());
+
+  this->add_handler(new SdEditorHandler());
+  this->add_handler(new SdBrowserHandler());
+  this->add_handler(new SdReaderHandler());
 
   if (this->is_dev_mode())
   {
-    ESP_LOGW("Server mode: ", "Dev mode");
     this->add_handler(new StatusHandler());
     this->add_handler(new ConfigHandler());
-    this->add_handler(new SdEditorHandler());
-    this->add_handler(new SdBrowserHandler());
-    this->add_handler(new SdReaderHandler());
-  }
-  else
-  {
-    ESP_LOGW("Server mode: ", "User mode");
-    this->add_handler(new RootHandler());
     this->add_handler(new PingHandler());
   }
 }
 
 void Server::register_handlers()
 {
-  // bool ap_mode = is_wifi_in_ap_mode();
-
   for (Handler *handler : _handlers)
   {
     if (httpd_register_uri_handler(_server, handler->get_get_uri()) != ESP_OK)

@@ -314,24 +314,29 @@ void Interpreter::executePrint(const std::vector<Token> &tokens)
     ESP_LOGE("Interpreter PRINT", "PRINT without value");
     return;
   }
-  std::string output;
-
-  const Token &valToken = tokens[1];
-
-  if (variables.find(valToken.value) != variables.end())
+  std::string fullOutput = "";
+  for (size_t i = 1; i < tokens.size(); i++)
   {
-    output = std::to_string(variables[valToken.value]);
-  }
-  else
-  {
-    output = valToken.value;
+    const Token &t = tokens[i];
+
+    if (t.type == TokenType::STRING)
+    {
+      fullOutput += t.value;
+    }
+    else if (variables.find(t.value) != variables.end())
+    {
+      fullOutput += std::to_string(variables[t.value]);
+    }
+    else
+    {
+      fullOutput += t.value;
+    }
+
+    if (i + 1 < tokens.size())
+      fullOutput += " ";
   }
 
-  // char timeStr[32];
-  // getTimeString(timeStr, sizeof(timeStr));
-  // std::string finalLine = "[" + std::string(timeStr) + "]: " + output + "\n";
-
-  std::string finalLine = "[HORA]: " + output + "\n";
+  std::string finalLine = "[HORA]: " + fullOutput + "\n";
   ESP_LOGI("Interpreter PRINT", "%s", finalLine.c_str());
 
   appendToFile(logFile, finalLine);

@@ -41,6 +41,24 @@ std::vector<Token> Tokenize(const std::string &line)
 
     char letter = line[i];
 
+    // Deteccion de strings "My Text"
+    if (letter == '"') {
+      if (!word.empty()) {
+        tokens.emplace_back(GenerateToken(word));
+        word.clear();
+      }
+
+      std::string literal = "";
+      i++; // Saltar la comilla inicial
+      while (i < line.size() && line[i] != '"') {
+        literal += line[i];
+        i++;
+      }
+      // Registramos un nuevo tipo de token: STRING
+      tokens.emplace_back(TokenType::STRING, literal);
+      continue;
+    }
+
     // Arrow assign '->' detectado
     if (letter == '-' && i + 1 < line.size() && line[i + 1] == '>')
     {
@@ -123,6 +141,9 @@ std::ostream &operator<<(std::ostream &out, TokenType type)
     break;
   case TokenType::VALUE:
     out << "VALUE";
+    break;
+  case TokenType::STRING:
+    out << "STRING";
     break;
 
     // FLOW CONTROL

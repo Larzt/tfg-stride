@@ -48,5 +48,5 @@ private:
   std::map<std::string, OutputPin *> outputs;
   std::atomic<bool> endlessLoop{true};
 
-  std::string logFile = "prints.txt";
+  std::string logFile = "prints.log";
 };
