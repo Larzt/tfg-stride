@@ -99,6 +99,10 @@ void button_task(void *pvParameters)
             }
 
             ESP_LOGI("Button", "Modo cambiado");
+
+            while(mode_button.is_pressed()) {
+                vTaskDelay(pdMS_TO_TICKS(50));
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

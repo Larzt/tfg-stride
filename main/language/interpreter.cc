@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "interpreter.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -31,9 +33,9 @@ void Interpreter::execute(const std::vector<std::vector<Token>> &program)
         executeArrow(tokens);
         continue;
       }
-      else if (tokens[1].type == TokenType::EQUAL)
+      else if (tokens[1].type == TokenType::ASSIGN)
       {
-        executeEqual(tokens);
+        executeAssign(tokens);
         continue;
       }
     }
@@ -125,7 +127,7 @@ void Interpreter::executeLogfile(const std::vector<Token> &tokens)
   ESP_LOGI("Interpreter FILE", "File assigment detected");
 
   // Sintaxis esperada: FILE <name>
-  if (tokens.size() < 2)
+  if (tokens.size() != 2)
   {
     std::string found = "";
     for (const auto &t : tokens)
@@ -196,9 +198,9 @@ void Interpreter::executeArrow(const std::vector<Token> &tokens)
   ESP_LOGI("Interpreter ARROW", "Arrow assignment: %ld -> %s", (long)value, varName.c_str());
 }
 
-void Interpreter::executeEqual(const std::vector<Token> &tokens)
+void Interpreter::executeAssign(const std::vector<Token> &tokens)
 {
-  ESP_LOGI("Interpreter EQUAL", "Equal assignment detected");
+  ESP_LOGI("Interpreter ASSIGN", "Equal assignment detected");
 
   // Sintaxis esperada: <var> = <value>
   if (tokens.size() < 3)
@@ -209,7 +211,7 @@ void Interpreter::executeEqual(const std::vector<Token> &tokens)
       found += t.value + " ";
     }
 
-    ESP_LOGE("Interpreter EQUAL", "Equal syntax error: se esperaba <var> = <value>, se encontró: %s", found.c_str());
+    ESP_LOGE("Interpreter ASSIGN", "Equal syntax error: se esperaba <var> = <value>, se encontró: %s", found.c_str());
     return;
   }
 
@@ -221,13 +223,13 @@ void Interpreter::executeEqual(const std::vector<Token> &tokens)
 
   if (endPtr == valueStr.c_str() || *endPtr != '\0')
   {
-    ESP_LOGE("Interpreter EQUAL", "Equal assignment: valor no válido: %s", valueStr.c_str());
+    ESP_LOGE("Interpreter ASSIGN", "Equal assignment: valor no válido: %s", valueStr.c_str());
     return;
   }
 
   variables[varName] = value;
 
-  ESP_LOGI("Interpreter EQUAL", "Equal assignment: %s = %ld", varName.c_str(), (long)value);
+  ESP_LOGI("Interpreter ASSIGN", "Equal assignment: %s = %ld", varName.c_str(), (long)value);
 }
 
 void Interpreter::executeOutput(const std::vector<Token> &tokens)
@@ -237,17 +239,36 @@ void Interpreter::executeOutput(const std::vector<Token> &tokens)
 
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    if (tokens[i].type == TokenType::NAME && i + 2 < tokens.size())
-      name = tokens[i + 2].value;
+    if (i + 2 >= tokens.size())
+      break;
 
-    if (tokens[i].type == TokenType::PIN && i + 2 < tokens.size())
-      pin = std::stoi(tokens[i + 2].value);
+    if (tokens[i].type == TokenType::NAME)
+    {
+      name = tokens[i + 2].value;
+    }
+    else if (tokens[i].type == TokenType::PIN)
+    {
+      std::string val = tokens[i + 2].value;
+      val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
+      if (val.empty() || !std::all_of(val.begin(), val.end(), ::isdigit))
+      {
+        ESP_LOGE("Interpreter", "Error: '%s' no es un numero de pin valido", val.c_str());
+        return;
+      }
+      pin = std::stoi(val);
+    }
   }
 
   if (!name.empty() && pin >= 0)
   {
-    ESP_LOGI("Interpreter", "Creating LED %s on pin %d",
-             name.c_str(), pin);
+
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(pin))
+    {
+      ESP_LOGE("Interpreter", "Pin %d no es un GPIO de salida válido", pin);
+      return;
+    }
+
+    ESP_LOGI("Interpreter", "Creating LED %s on pin %d", name.c_str(), pin);
 
     OutputPin *led = new OutputPin((gpio_num_t)pin);
     led->init();
@@ -255,10 +276,10 @@ void Interpreter::executeOutput(const std::vector<Token> &tokens)
   }
   else
   {
-    ESP_LOGE("Interpreter", "Invalid output declaration");
+    ESP_LOGE("Interpreter", "Invalid output declaration: name='%s', pin=%d",
+             name.c_str(), pin);
   }
 }
-
 void Interpreter::executeWrite(const std::vector<Token> &tokens)
 {
   if (tokens.size() < 4)
@@ -410,45 +431,58 @@ size_t Interpreter::executeLoop(const std::vector<std::vector<Token>> &program, 
 
 size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, size_t currentIndex)
 {
-
   const auto &tokens = program[currentIndex];
-
-  if (tokens.size() < 2)
+  if (tokens.size() < 4)
   {
-    ESP_LOGE("Interpreter IF", "IF without condition at line %zu", currentIndex + 1);
+    ESP_LOGE("Interpreter IF", "Invalid IF syntax at line %zu. Expected: IF <var> <op> <value>", currentIndex + 1);
     return currentIndex;
   }
 
   std::string condVar = tokens[1].value;
-  std::string condState = tokens[2].value;
+  TokenType op = tokens[2].type;
+  std::string condValueStr = tokens[3].value;
 
-  ESP_LOGE("Interpreter IF", "Variable value: %s", condVar.c_str());
-  ESP_LOGE("Interpreter IF", "Statement value: %s", condState.c_str());
+  ESP_LOGD("Interpreter IF", "Evaluating: %s [op] %s", condVar.c_str(), condValueStr.c_str());
 
   bool conditionMatch = false;
-
   if (outputs.find(condVar) != outputs.end())
   {
     OutputPin *out = outputs[condVar];
-    conditionMatch = (condState == "on" && out->get() == 1) ||
-                     (condState == "off" && out->get() == 0);
+    int pinState = out->get();
+    int expectedState = (condValueStr == "on") ? 1 : 0;
+    if (op == TokenType::IS_EQUAL) {
+      conditionMatch = (pinState == expectedState);
+    } else if (op == TokenType::NOT_EQUAL) {
+      conditionMatch = (pinState != expectedState);
+    } else {
+      ESP_LOGW("Interpreter IF", "Operador no soportado para pines digitales");
+    }
   }
+
   else if (variables.find(condVar) != variables.end())
   {
     int varValue = variables[condVar];
-    int condValue = std::stoi(condState);
-    conditionMatch = varValue == condValue;
+    int condValue = std::stoi(condValueStr);
+    switch (op) {
+      case TokenType::IS_EQUAL:      conditionMatch = (varValue == condValue); break;
+      case TokenType::NOT_EQUAL:     conditionMatch = (varValue != condValue); break;
+      case TokenType::LESS_THAN:     conditionMatch = (varValue < condValue); break;
+      case TokenType::LESS_EQUAL:    conditionMatch = (varValue <= condValue); break;
+      case TokenType::GREATER_THAN:  conditionMatch = (varValue > condValue); break;
+      case TokenType::GREATER_EQUAL: conditionMatch = (varValue >= condValue); break;
+      default:
+        ESP_LOGW("Interpreter IF", "Operador desconocido en el IF");
+        break;
+    }
   }
   else
   {
-    ESP_LOGW("Interpreter IF", "Condición desconocida: %s", condVar.c_str());
+    ESP_LOGW("Interpreter IF", "Variable o salida no encontrada: %s", condVar.c_str());
   }
 
   size_t blockStart = currentIndex + 1;
   size_t blockEnd = blockStart;
   size_t elseIndex = SIZE_MAX;
-
-  // Buscar ELSE o ENDIF
   while (blockEnd < program.size())
   {
     TokenType t = program[blockEnd][0].type;
@@ -468,8 +502,6 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
     ESP_LOGE("Interpreter IF", "ENDIF not found for IF at line %zu", currentIndex + 1);
     return currentIndex;
   }
-
-  // Ejecutar el bloque correspondiente
   if (conditionMatch)
   {
     size_t execEnd = (elseIndex != SIZE_MAX) ? elseIndex : blockEnd;
@@ -489,10 +521,7 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
     }
   }
 
-  // Devolver índice de ENDIF para que el for principal continue
   return blockEnd;
-
-  return size_t();
 }
 
 void Interpreter::executeI2C(const std::vector<Token> &tokens)

@@ -15,6 +15,7 @@ idf_component_register(
         "."
         "./log"
         "./language"
+        "./language/lexer"
         "./network"
         "./server"
         "./handlers"

@@ -28,7 +28,7 @@ private:
 
   void executeLogfile(const std::vector<Token> &tokens);
   void executeArrow(const std::vector<Token> &tokens);
-  void executeEqual(const std::vector<Token> &tokens);
+  void executeAssign(const std::vector<Token> &tokens);
   void executeSingle(const std::vector<Token> &tokens);
   void executeOutput(const std::vector<Token> &tokens);
   void executeWrite(const std::vector<Token> &tokens);

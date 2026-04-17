@@ -39,7 +39,7 @@ void ParseIf::parse()
   // std::string conditionVar = peek().value;
   expect(TokenType::IDENTIFIER, "Se esperaba un identificador después de 'if'");
 
-  expect(TokenType::EQUAL, "Se esperaba '=' en la condición");
+  expect(TokenType::ASSIGN, "Se esperaba '=' en la condición");
 
   std::string conditionValue = peek().value;
   expect(TokenType::VALUE, "Se esperaba un valor de comparación");
