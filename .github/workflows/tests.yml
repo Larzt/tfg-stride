@@ -28,7 +28,9 @@ jobs:
             main/tests/lexer_test.cc \
             main/language/lexer/lexer.cc \
             main/language/lexer/line_lexer.cc \
-            -Imain -Imain/language -Imain/utils \
+            -Imain/language/lexer \
+            -Imain/language \
+            -Imain/utils \
             -DTEST \
             -o lexer_test
 
