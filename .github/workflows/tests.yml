@@ -31,6 +31,7 @@ jobs:
             -Imain/language/lexer \
             -Imain/language \
             -Imain/utils \
+            -Imain/consts \
             -DTEST \
             -o lexer_test
 
