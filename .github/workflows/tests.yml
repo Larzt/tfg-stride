@@ -25,10 +25,11 @@ jobs:
       - name: Build tests
         run: |
           g++ -std=c++17 \
-            tests/lexer_test.cc \
-            language/lexer.cc \
-            -Ilanguage -Iutils \
+            main/tests/lexer_test.cc \
+            main/language/lexer.cc \
+            -Imain/language -Imain/utils \
             -o lexer_test
+
       - name: Run tests
         run: |
           ./lexer_test || exit 1

@@ -7,7 +7,7 @@ INCLUDES = -I language/lexer -I utils -I consts -I language
 LEXER_SRCS = language/lexer/lexer.cc \
              language/lexer/line_lexer.cc
 
-PARSER_SRCS = main/language/parser.cc \
+PARSER_SRCS = language/parser.cc \
               $(LEXER_SRCS)
 
 

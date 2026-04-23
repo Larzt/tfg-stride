@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
+#include "utility.h"
 #include "lexer.h"
 #include "parser.h"
 #include "check.h"
 
 // g++ -std=c++17 tests/parser_test.cc language/lexer.cc language/parser.cc -Iconsts -Ilanguage -Iutils -o parser_test -D TEST
 
-void _testParseIf()
+void _testParseIf(TestRunner& runner)
 {
   size_t index = 0;
   std::string code = "if myLed = on\n\
@@ -18,10 +19,10 @@ void _testParseIf()
   ParseIf parser(tokens, index);
   parser.parse();
 
-  check(index, (size_t)9, "Parse If");
+  check(runner, index, (size_t)9, "Parse If");
 }
 
-void _testParseElseIF()
+void _testParseElseIF(TestRunner& runner)
 {
 
   size_t index = 0;
@@ -35,10 +36,10 @@ void _testParseElseIF()
 
   ParseIf parser(tokens, index);
   parser.parse();
-  check(index, (size_t)14, "Parse If Else");
+  check(runner, index, (size_t)14, "Parse If Else");
 }
 
-void _testParseLoop()
+void _testParseLoop(TestRunner& runner)
 {
   size_t index = 0;
   std::string code = "loop 5\n\
@@ -51,17 +52,29 @@ void _testParseLoop()
 
   ParseLoop parser(tokens, index);
   parser.parse();
-  check(index, (size_t)13, "Parse Loop");
+  check(runner, index, (size_t)13, "Parse Loop");
 }
 
 int main()
 {
-  _testParseIf();
-  _testParseElseIF();
-  _testParseLoop();
+  TestRunner runner;
 
-  std::cout << "\n"
-            << RESET << "--- PARSER TESTS COMPLETED ---" << std::endl;
+  _testParseIf(runner);
+  _testParseElseIF(runner);
+  _testParseLoop(runner);
 
-  return 0;
+  std::cout << CYAN << "PASSED: " << runner.passed << kENDL;
+  std::cout << CYAN << "FAILED: " << runner.failed << kENDL;
+
+
+  if (!runner.failedMessages.empty())
+  {
+    std::cout << kENDL << RED << "FAILED TESTS:" << RESET << kENDL;
+    for (const auto &msg : runner.failedMessages)
+    {
+      std::cout << RED << msg << RESET << kENDL;
+    }
+  }
+
+  return runner.failed ? 1 : 0;
 }

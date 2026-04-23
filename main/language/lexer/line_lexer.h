@@ -1,6 +1,11 @@
 #pragma once
 
 #include "lexer.h"
+#ifndef TEST
+    #include "esp_log.h"
+#endif
+
+
 #include <string>
 #include <vector>
 

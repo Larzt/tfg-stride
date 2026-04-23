@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <map>
+#include <sstream>
 #include <atomic>
 #include "lexer.h"
 #include "output.h"
@@ -26,6 +27,7 @@ private:
   Interpreter(const Interpreter &) = delete;
   Interpreter &operator=(const Interpreter &) = delete;
 
+  bool evaluateCondition(const std::vector<Token>& tokens);
   void executeLogfile(const std::vector<Token> &tokens);
   void executeArrow(const std::vector<Token> &tokens);
   void executeAssign(const std::vector<Token> &tokens);

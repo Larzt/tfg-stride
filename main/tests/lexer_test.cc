@@ -262,8 +262,8 @@ int main()
   testEmptyInput(runner);
   testOnlyGarbage(runner);
 
-  std::cout << "PASSED: " << runner.passed << kENDL;
-  std::cout << "FAILED: " << runner.failed << kENDL;
+  std::cout << CYAN << "PASSED: " << runner.passed << kENDL;
+  std::cout << CYAN << "FAILED: " << runner.failed << kENDL;
 
   if (!runner.failedMessages.empty())
   {
