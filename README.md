@@ -1,4 +1,5 @@
 ![tests](https://github.com/Larzt/tfg-stride/actions/workflows/tests.yml/badge.svg)
+![ESP-IDF Build](https://github.com/Larzt/tfg-stride/actions/workflows/esp-idf-build-validation.yml/badge.svg)
 
 # 📡 Servidor HTTP Modular para ESP32
 
