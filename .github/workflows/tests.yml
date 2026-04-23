@@ -26,8 +26,9 @@ jobs:
         run: |
           g++ -std=c++17 \
             main/tests/lexer_test.cc \
-            main/language/lexer.cc \
-            -Imain/language -Imain/utils \
+            main/language/lexer/lexer.cc \
+            main/language/lexer/line_lexer.cc \
+            -Imain -Imain/language -Imain/utils \
             -o lexer_test
 
       - name: Run tests
