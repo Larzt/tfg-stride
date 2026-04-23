@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: espressif/idf:release-v5.2
+    container: espressif/idf:release-v5.5
 
     steps:
       - name: Checkout repo

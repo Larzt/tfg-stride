@@ -1,3 +1,5 @@
+![tests](https://github.com/Larzt/tfg-stride/actions/workflows/tests.yml/badge.svg)
+
 # 📡 Servidor HTTP Modular para ESP32
 
 Este repositorio contiene la implementación base del firmware para el **Dispositivo Modular STRIDE**, un **PROYECTO DE TRABAJO DE FIN DE GRADO (TFG)**.
