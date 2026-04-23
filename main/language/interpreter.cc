@@ -373,57 +373,80 @@ size_t Interpreter::executeLoop(const std::vector<std::vector<Token>> &program, 
     return currentIndex;
   }
 
-  int repeatCount = std::stoi(tokens[1].value);
-
-  ESP_LOGI("Interpreter", "Starting LOOP x%d", repeatCount);
-
   size_t loopStart = currentIndex + 1;
   size_t loopEnd = loopStart;
 
-  // Buscar DLOOP
-  while (loopEnd < program.size() && program[loopEnd][0].type != TokenType::DLOOP)
+  bool notEndOfProgram = loopEnd < program.size();
+  bool notDLoopToken = program[loopEnd][0].type != TokenType::DLOOP;
+  while (notEndOfProgram && notDLoopToken)
   {
     loopEnd++;
+    notEndOfProgram = loopEnd < program.size();
+    notDLoopToken = program[loopEnd][0].type != TokenType::DLOOP;
   }
 
-  if (loopEnd >= program.size())
+  bool isConditional = tokens.size() >= 4 || tokens.size() <= 5;
+  if (isConditional)
   {
-    ESP_LOGE("Interpreter", "DLOOP not found");
-    return currentIndex;
-  }
-
-  if (repeatCount == -1)
-  {
-    start_loop();
-    ESP_LOGI("Interpreter", "Endless Loop");
-    while (endlessLoop.load())
+    while (evaluateCondition(tokens))
     {
       for (size_t j = loopStart; j < loopEnd; j++)
       {
-        if (!endlessLoop.load())
-        {
-          break;
-        }
-
         executeSingle(program[j]);
       }
+      vTaskDelay(1);
     }
   }
   else
   {
+    int repeatCount = std::stoi(tokens[1].value);
 
-    // Ejecutar bloque N veces
-    for (int r = 0; r < repeatCount; r++)
+    ESP_LOGI("Interpreter", "Starting LOOP x%d", repeatCount);
+
+    // Buscar DLOOP
+    while (loopEnd < program.size() && program[loopEnd][0].type != TokenType::DLOOP)
     {
-      ESP_LOGI("Interpreter", "Loop iteration %d/%d", r + 1, repeatCount);
+      loopEnd++;
+    }
 
-      for (size_t j = loopStart; j < loopEnd; j++)
+    if (loopEnd >= program.size())
+    {
+      ESP_LOGE("Interpreter", "DLOOP not found");
+      return currentIndex;
+    }
+
+    if (repeatCount == -1)
+    {
+      start_loop();
+      ESP_LOGI("Interpreter", "Endless Loop");
+      while (endlessLoop.load())
       {
-        executeSingle(program[j]);
+        for (size_t j = loopStart; j < loopEnd; j++)
+        {
+          if (!endlessLoop.load())
+          {
+            break;
+          }
+
+          executeSingle(program[j]);
+        }
       }
     }
+    else
+    {
+      // Ejecutar bloque N veces
+      for (int r = 0; r < repeatCount; r++)
+      {
+        ESP_LOGI("Interpreter", "Loop iteration %d/%d", r + 1, repeatCount);
+
+        for (size_t j = loopStart; j < loopEnd; j++)
+        {
+          executeSingle(program[j]);
+        }
+      }
+    }
+    ESP_LOGI("Interpreter", "Loop finished");
   }
-  ESP_LOGI("Interpreter", "Loop finished");
 
   // devolver índice del DLOOP para que el for principal continúe después
   return loopEnd;
@@ -438,51 +461,12 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
     return currentIndex;
   }
 
-  std::string condVar = tokens[1].value;
-  TokenType op = tokens[2].type;
-  std::string condValueStr = tokens[3].value;
-
-  ESP_LOGD("Interpreter IF", "Evaluating: %s [op] %s", condVar.c_str(), condValueStr.c_str());
-
-  bool conditionMatch = false;
-  if (outputs.find(condVar) != outputs.end())
-  {
-    OutputPin *out = outputs[condVar];
-    int pinState = out->get();
-    int expectedState = (condValueStr == "on") ? 1 : 0;
-    if (op == TokenType::IS_EQUAL) {
-      conditionMatch = (pinState == expectedState);
-    } else if (op == TokenType::NOT_EQUAL) {
-      conditionMatch = (pinState != expectedState);
-    } else {
-      ESP_LOGW("Interpreter IF", "Operador no soportado para pines digitales");
-    }
-  }
-
-  else if (variables.find(condVar) != variables.end())
-  {
-    int varValue = variables[condVar];
-    int condValue = std::stoi(condValueStr);
-    switch (op) {
-      case TokenType::IS_EQUAL:      conditionMatch = (varValue == condValue); break;
-      case TokenType::NOT_EQUAL:     conditionMatch = (varValue != condValue); break;
-      case TokenType::LESS_THAN:     conditionMatch = (varValue < condValue); break;
-      case TokenType::LESS_EQUAL:    conditionMatch = (varValue <= condValue); break;
-      case TokenType::GREATER_THAN:  conditionMatch = (varValue > condValue); break;
-      case TokenType::GREATER_EQUAL: conditionMatch = (varValue >= condValue); break;
-      default:
-        ESP_LOGW("Interpreter IF", "Operador desconocido en el IF");
-        break;
-    }
-  }
-  else
-  {
-    ESP_LOGW("Interpreter IF", "Variable o salida no encontrada: %s", condVar.c_str());
-  }
+  bool conditionMatch = evaluateCondition(tokens);
 
   size_t blockStart = currentIndex + 1;
   size_t blockEnd = blockStart;
   size_t elseIndex = SIZE_MAX;
+
   while (blockEnd < program.size())
   {
     TokenType t = program[blockEnd][0].type;
@@ -497,11 +481,6 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
     blockEnd++;
   }
 
-  if (blockEnd >= program.size())
-  {
-    ESP_LOGE("Interpreter IF", "ENDIF not found for IF at line %zu", currentIndex + 1);
-    return currentIndex;
-  }
   if (conditionMatch)
   {
     size_t execEnd = (elseIndex != SIZE_MAX) ? elseIndex : blockEnd;
@@ -510,18 +489,64 @@ size_t Interpreter::executeIf(const std::vector<std::vector<Token>> &program, si
       executeSingle(program[i]);
     }
   }
-  else
+  else if (elseIndex != SIZE_MAX)
   {
-    if (elseIndex != SIZE_MAX)
+    for (size_t i = elseIndex + 1; i < blockEnd; i++)
     {
-      for (size_t i = elseIndex + 1; i < blockEnd; i++)
-      {
-        executeSingle(program[i]);
-      }
+      executeSingle(program[i]);
     }
   }
 
   return blockEnd;
+}
+
+bool Interpreter::evaluateCondition(const std::vector<Token> &tokens)
+{
+  if (tokens.size() < 4)
+    return false;
+
+  std::string varName = tokens[1].value;
+  TokenType op = tokens[2].type;
+  std::string targetStr = tokens[3].value;
+
+  // Caso 1: Es un PIN
+  if (outputs.find(varName) != outputs.end())
+  {
+    int pinState = outputs[varName]->get();
+    int expected = (targetStr == "on") ? 1 : 0;
+    if (op == TokenType::IS_EQUAL)
+      return pinState == expected;
+    if (op == TokenType::NOT_EQUAL)
+      return pinState != expected;
+    return false;
+  }
+
+  // Caso 2: Es una Variable
+  if (variables.find(varName) != variables.end())
+  {
+    int varVal = variables[varName];
+    int targetVal = std::stoi(targetStr);
+    switch (op)
+    {
+    case TokenType::IS_EQUAL:
+      return varVal == targetVal;
+    case TokenType::NOT_EQUAL:
+      return varVal != targetVal;
+    case TokenType::LESS_THAN:
+      return varVal < targetVal;
+    case TokenType::LESS_EQUAL:
+      return varVal <= targetVal;
+    case TokenType::GREATER_THAN:
+      return varVal > targetVal;
+    case TokenType::GREATER_EQUAL:
+      return varVal >= targetVal;
+    default:
+      return false;
+    }
+  }
+
+  ESP_LOGW("Interpreter", "Variable/Pin no encontrado: %s", varName.c_str());
+  return false;
 }
 
 void Interpreter::executeI2C(const std::vector<Token> &tokens)

@@ -1,237 +1,278 @@
 #include <iostream>
+#include <vector>
+#include <string>
 #include <cassert>
+
 #include "lexer.h"
 #include "line_lexer.h"
 #include "check.h"
+#include "utility.h"
 
-// g++ -std=c++17 tests/lexer_test.cc language/lexer.cc -Ilanguage -Iutils -o lexer_test -D TEST
-
-void _1testTokenizer()
+// -----------------------------------------------------
+// Happy Path
+// -----------------------------------------------------
+void testKeywordTokens(TestRunner &runner)
 {
-  std::cout << RESET << "Test 1: " << std::endl;
+  runner.setTest("Test Keywords");
 
-  std::string line = "output=led name=myLed pin=16";
+  auto tokens = Tokenize("output write read if endif");
 
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(9);
-  check(tokens.size(), expectedSize, "tokens.size()");
-  check(tokens[0].type, TokenType::OUTPUT, "tokens[0].type");
-  check(tokens[0].value, std::string("output"), "tokens[0].value");
-  check(tokens[2].type, TokenType::LED, "tokens[2].type");
-  check(tokens[2].value, std::string("led"), "tokens[2].value");
+  checkToken(runner, tokens[0], TokenType::OUTPUT, "output", "output");
+  checkToken(runner, tokens[1], TokenType::WRITE, "write", "write");
+  checkToken(runner, tokens[2], TokenType::READ, "read", "read");
+  checkToken(runner, tokens[3], TokenType::IF, "if", "if");
+  checkToken(runner, tokens[4], TokenType::ENDIF, "endif", "endif");
 }
 
-void _2testTokenizer()
+void testIdentifierTokens(TestRunner &runner)
 {
-  std::cout << RESET << "Test 2: " << std::endl;
-  std::string line = "write=myLed on";
+  runner.setTest("Test Identifiers");
 
-  auto tokens = Tokenize(line);
+  auto tokens = Tokenize("myLed temp sensor_1");
 
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(4);
-  check(tokens.size(), expectedSize, "tokens.size()");
-  check(tokens[0].type, TokenType::WRITE, "tokens[0].type");
-  check(tokens[0].value, std::string("write"), "tokens[0].value");
-  check(tokens[2].type, TokenType::IDENTIFIER, "tokens[2].type");
-  check(tokens[2].value, std::string("myLed"), "tokens[2].value");
-  check(tokens[3].type, TokenType::VALUE, "tokens[3].type");
-  check(tokens[3].value, std::string("on"), "tokens[3].value");
+  checkToken(runner, tokens[0], TokenType::IDENTIFIER, "myLed", "identifier 1");
+  checkToken(runner, tokens[1], TokenType::IDENTIFIER, "temp", "identifier 2");
+  checkToken(runner, tokens[2], TokenType::IDENTIFIER, "sensor_1", "identifier 3");
 }
 
-void _3testTokenizer()
+void testNumberTokens(TestRunner &runner)
 {
-  std::cout << RESET << "Test 3: " << std::endl;
+  runner.setTest("Test Numbers");
+
+  auto tokens = Tokenize("123 0xFF 42");
+
+  checkToken(runner, tokens[0], TokenType::NUMBER, "123", "number 1");
+  checkToken(runner, tokens[1], TokenType::HEX_NUMBER, "0xFF", "hex number");
+  checkToken(runner, tokens[2], TokenType::NUMBER, "42", "number 2");
+}
+
+void testAssignmentTokens(TestRunner &runner)
+{
+  runner.setTest("Test Assignment");
+
+  auto tokens = Tokenize("a = 5  3 -> b");
+
+  checkToken(runner, tokens[0], TokenType::IDENTIFIER, "a", "identifier");
+  checkToken(runner, tokens[1], TokenType::ASSIGN, "=", "assign");
+  checkToken(runner, tokens[2], TokenType::NUMBER, "5", "value");
+
+  checkToken(runner, tokens[3], TokenType::NUMBER, "3", "value 2");
+  checkToken(runner, tokens[4], TokenType::ARROW, "->", "arrow");
+  checkToken(runner, tokens[5], TokenType::IDENTIFIER, "b", "target");
+}
+
+void testComparisonTokens(TestRunner &runner)
+{
+  runner.setTest("Test Comparisons");
+
+  auto tokens = Tokenize("a == b a != b a < b a <= b a > b a >= b");
+
+  checkToken(runner, tokens[1], TokenType::IS_EQUAL, "==", "==");
+  checkToken(runner, tokens[4], TokenType::NOT_EQUAL, "!=", "!=");
+  checkToken(runner, tokens[7], TokenType::LESS_THAN, "<", "<");
+  checkToken(runner, tokens[10], TokenType::LESS_EQUAL, "<=", "<=");
+  checkToken(runner, tokens[13], TokenType::GREATER_THAN, ">", ">");
+  checkToken(runner, tokens[16], TokenType::GREATER_EQUAL, ">=", ">=");
+}
+
+void testValueTokens(TestRunner &runner)
+{
+  runner.setTest("Test Values");
+
+  auto tokens = Tokenize("on OFF");
+
+  checkToken(runner, tokens[0], TokenType::VALUE, "on", "value on");
+  checkToken(runner, tokens[1], TokenType::VALUE, "OFF", "value off");
+}
+
+void testPrintTokens(TestRunner &runner)
+{
+  runner.setTest("Test Print");
+
+  auto tokens = Tokenize("print \"hola mundo\"");
+
+  checkToken(runner, tokens[0], TokenType::PRINT, "print", "print");
+  checkToken(runner, tokens[1], TokenType::STRING, "hola mundo", "string message");
+}
+
+void testI2CTokens(TestRunner &runner)
+{
+  runner.setTest("Test I2C");
+
+  auto tokens = Tokenize("i2c read 0x76 0xFA 3 -> temp");
+
+  checkToken(runner, tokens[0], TokenType::I2C, "i2c", "i2c");
+  checkToken(runner, tokens[1], TokenType::READ, "read", "read");
+  checkToken(runner, tokens[2], TokenType::HEX_NUMBER, "0x76", "addr");
+  checkToken(runner, tokens[3], TokenType::HEX_NUMBER, "0xFA", "register");
+  checkToken(runner, tokens[4], TokenType::NUMBER, "3", "length");
+  checkToken(runner, tokens[5], TokenType::ARROW, "->", "arrow");
+  checkToken(runner, tokens[6], TokenType::IDENTIFIER, "temp", "target");
+}
+
+void testProgramScenarios(TestRunner &runner)
+{
+  runner.setTest("Test Program Scenarios");
 
   std::string line = "output=led name=myLed pin=16\n\
-      write=myLed ON\n\
-      read = myLed\n\
-      write = myLed OFF";
+write=myLed ON\n\
+if myLed == on\n\
+write=myLed OFF\n\
+endif\n\
+print myLed";
 
   auto tokens = Tokenize(line);
 
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(20);
-  check(tokens.size(), expectedSize, "tokens.size()");
-  check(tokens[9].type, TokenType::WRITE, "tokens[9].type");
-  check(tokens[9].value, std::string("write"), "tokens[9].value");
-  check(tokens[13].type, TokenType::READ, "tokens[13].type");
-  check(tokens[13].value, std::string("read"), "tokens[13].value");
-  check(tokens[15].type, TokenType::IDENTIFIER, "tokens[15].type");
-  check(tokens[15].value, std::string("myLed"), "tokens[15].value");
-  check(tokens[16].type, TokenType::WRITE, "tokens[14].type");
-  check(tokens[16].value, std::string("write"), "tokens[14].value");
+  check(runner, tokens.size() > 0, true, "non empty");
+
+  checkToken(runner, tokens[0], TokenType::OUTPUT, "output", "first token");
+  checkToken(runner, tokens[2], TokenType::LED, "led", "led");
+
+  checkToken(runner, tokens[9], TokenType::WRITE, "write", "write");
+  checkToken(runner, tokens[13], TokenType::IF, "if", "if");
+
+  checkToken(runner, tokens[15], TokenType::IS_EQUAL, "==", "==");
+  checkToken(runner, tokens[21], TokenType::ENDIF, "endif", "endif");
+
+  checkToken(runner, tokens[22], TokenType::PRINT, "print", "print");
+  checkToken(runner, tokens.back(), TokenType::VALUE, "off", "off string");
 }
 
-void _4testTokenizer()
+// -----------------------------------------------------
+// Error path
+// -----------------------------------------------------
+void testInvalidTokens(TestRunner &runner)
 {
-  std::cout << RESET << "Test 3: " << std::endl;
+  runner.setTest("Test Invalid Tokens");
 
-  std::string line = "i2c read 0x76 0xFA 3 -> temp";
+  auto tokens = Tokenize("@ @@ ###");
 
-  auto tokens = Tokenize(line);
+  check(runner, tokens.size() > 0, true, "tokens generated");
 
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(7);
-  check(tokens.size(), expectedSize, "tokens.size()");
-  check(tokens[0].type, TokenType::I2C, "tokens[0].type");
-  check(tokens[0].value, std::string("i2c"), "tokens[0].value");
-  check(tokens[1].type, TokenType::READ, "tokens[1].type");
-  check(tokens[1].value, std::string("read"), "tokens[1].value");
-  check(tokens[2].type, TokenType::HEX_NUMBER, "tokens[2].type");
-  check(tokens[2].value, std::string("0x76"), "tokens[2].value");
-  check(tokens[3].type, TokenType::HEX_NUMBER, "tokens[3].type");
-  check(tokens[3].value, std::string("0xFA"), "tokens[3].value");
-  check(tokens[4].type, TokenType::NUMBER, "tokens[4].type");
-  check(tokens[4].value, std::string("3"), "tokens[4].value");
-  check(tokens[5].type, TokenType::ARROW, "tokens[5].type");
-  check(tokens[5].value, std::string("->"), "tokens[5].value");
-  check(tokens[6].type, TokenType::IDENTIFIER, "tokens[6].type");
-  check(tokens[6].value, std::string("temp"), "tokens[6].value");
+  for (const auto &t : tokens)
+  {
+    check(runner, t.type, TokenType::UNKNOWN, "invalid token detected");
+  }
 }
 
-void _5testArrowAssignment()
+void testInvalidHex(TestRunner &runner)
 {
-  std::cout << RESET << "Test 5: Arrow assignment (value -> var)" << std::endl;
+  runner.setTest("Test Invalid Hex");
 
-  std::string line = "3 -> t";
-
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(3);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[0].type, TokenType::NUMBER, "tokens[0].type");
-  check(tokens[0].value, std::string("3"), "tokens[0].value");
-
-  check(tokens[1].type, TokenType::ARROW, "tokens[1].type");
-  check(tokens[1].value, std::string("->"), "tokens[1].value");
-
-  check(tokens[2].type, TokenType::IDENTIFIER, "tokens[2].type");
-  check(tokens[2].value, std::string("t"), "tokens[2].value");
+  auto tokens = Tokenize("0x 0xG1 0xZZ");
+  check(runner, tokens.size() > 0, true, "tokens exist");
+  for (const auto &t : tokens)
+  {
+    check(runner, t.type == TokenType::HEX_NUMBER, false, "invalid hex should not be valid");
+  }
 }
 
-void _6testEqualAssignment()
+void testUnclosedString(TestRunner &runner)
 {
-  std::cout << RESET << "Test 6: Equal assignment (var = value)" << std::endl;
+  runner.setTest("Test Unclosed String");
 
-  std::string line = "T_RAW=3";
-
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(3);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[0].type, TokenType::IDENTIFIER, "tokens[0].type");
-  check(tokens[0].value, std::string("T_RAW"), "tokens[0].value");
-
-  check(tokens[1].type, TokenType::ASSIGN, "tokens[1].type");
-  check(tokens[1].value, std::string("="), "tokens[1].value");
-
-  check(tokens[2].type, TokenType::NUMBER, "tokens[2].type");
-  check(tokens[2].value, std::string("3"), "tokens[2].value");
+  auto tokens = Tokenize("print \"hola");
+  check(runner, tokens.size() > 0, true, "tokens exist");
+  check(runner, tokens[1].type == TokenType::STRING, false, "string should be invalid");
 }
 
-void _7testEqualSyntax()
+void testInvalidOperators(TestRunner &runner)
 {
-  std::cout << RESET << "Test 7: Invalid syntax" << std::endl;
-  std::string line = "if myLed == on\n\
-      write=myLed off\n\
-      endif";
-  auto tokens = Tokenize(line);
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(9);
-  check(tokens.size(), expectedSize, "tokens.size()");
-  check(tokens[0].type, TokenType::IF, "tokens[0].type");
-  check(tokens[0].value, std::string("if"), "tokens[0].value");
-  check(tokens[1].type, TokenType::IDENTIFIER, "tokens[1].type");
-  check(tokens[1].value, std::string("myLed"), "tokens[1].value");
-  check(tokens[2].type, TokenType::IS_EQUAL, "tokens[2].type");
-  check(tokens[2].value, std::string("=="), "tokens[2].value");
-  check(tokens[3].type, TokenType::VALUE, "tokens[3].type");
-  check(tokens[3].value, std::string("on"), "tokens[3].value");
+  runner.setTest("Test Invalid Operators");
+
+  auto tokens = Tokenize("a === b a <> b a => b");
+  for (const auto &t : tokens)
+  {
+    check(runner, t.type == TokenType::IS_EQUAL, false, "invalid operator should fail");
+  }
 }
 
-void _8testLessOperators()
+void testBrokenAssignments(TestRunner &runner)
 {
-  std::cout << RESET << "Test 8: Less than and Less equal (<, <=)" << std::endl;
-  std::string line = "a < 5 \n b <= 10";
+  runner.setTest("Test Broken Assignments");
+  auto tokens = Tokenize("= 5");
 
-  auto tokens = Tokenize(line);
+  check(runner, tokens[0].type, TokenType::ASSIGN, "Token = detectado");
+  check(runner, tokens[1].type, TokenType::NUMBER, "Token 5 detectado");
 
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(6);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[1].type, TokenType::LESS_THAN, "tokens[1].type");
-  check(tokens[1].value, std::string("<"), "tokens[1].value");
-
-  check(tokens[4].type, TokenType::LESS_EQUAL, "tokens[4].type");
-  check(tokens[4].value, std::string("<="), "tokens[4].value");
+  bool isValidSequence = (tokens.size() >= 3);
+  check(runner, isValidSequence, false, "La secuencia es demasiado corta para ser una asignación");
 }
 
-void _9testGreaterOperators()
+void testInvalidKeywords(TestRunner &runner)
 {
-  std::cout << RESET << "Test 9: Greater than and Greater equal (>, >=)" << std::endl;
-  std::string line = "x > 0 \n y >= x";
-
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(6);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[1].type, TokenType::GREATER_THAN, "tokens[1].type");
-  check(tokens[1].value, std::string(">"), "tokens[1].value");
-
-  check(tokens[4].type, TokenType::GREATER_EQUAL, "tokens[4].type");
-  check(tokens[4].value, std::string(">="), "tokens[4].value");
+  runner.setTest("Test Invalid Keywords");
+  auto tokens = Tokenize("outpu writ reaad iff endiff");
+  for (const auto &t : tokens)
+  {
+    check(runner, t.type == TokenType::OUTPUT, false, "typo keyword");
+    check(runner, t.type == TokenType::WRITE, false, "typo keyword");
+  }
 }
 
-void _10testNotEqualOperator()
+void testWeirdSpacing(TestRunner &runner)
 {
-  std::cout << RESET << "Test 10: Not equal (!=)" << std::endl;
-  std::string line = "if state != on";
-
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(4);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[2].type, TokenType::NOT_EQUAL, "tokens[2].type");
-  check(tokens[2].value, std::string("!="), "tokens[2].value");
+  runner.setTest("Test Weird Spacing");
+  auto tokens = Tokenize("a=5    b   =    6");
+  check(runner, tokens.size() > 0, true, "tokens exist");
+  checkToken(runner, tokens[0], TokenType::IDENTIFIER, "a", "a");
+  checkToken(runner, tokens[1], TokenType::ASSIGN, "=", "=");
+  checkToken(runner, tokens[2], TokenType::NUMBER, "5", "5");
 }
 
-void _11testMixedAssignAndCompare()
+void testEmptyInput(TestRunner &runner)
 {
-  std::cout << RESET << "Test 11: Mix Assign (=) and Is Equal (==)" << std::endl;
-  std::string line = "target = 10 \n if target == 10";
+  runner.setTest("Test Empty Input");
+  auto tokens = Tokenize("");
+  check(runner, tokens.size(), static_cast<size_t>(0), "empty input");
+}
 
-  auto tokens = Tokenize(line);
-
-  auto expectedSize = static_cast<std::vector<Token>::size_type>(7);
-  check(tokens.size(), expectedSize, "tokens.size()");
-
-  check(tokens[1].type, TokenType::ASSIGN, "tokens[1].type");
-  check(tokens[1].value, std::string("="), "tokens[1].value");
-
-  // Verificamos Comparación '=='
-  check(tokens[5].type, TokenType::IS_EQUAL, "tokens[5].type");
-  check(tokens[5].value, std::string("=="), "tokens[5].value");
+void testOnlyGarbage(TestRunner &runner)
+{
+  runner.setTest("Test Only Garbage");
+  auto tokens = Tokenize("$$$$$");
+  for (const auto &t : tokens)
+  {
+    check(runner, t.type, TokenType::UNKNOWN, "garbage token");
+  }
 }
 
 int main()
 {
-  _1testTokenizer();
-  _2testTokenizer();
-  _3testTokenizer();
-  _4testTokenizer();
-  _5testArrowAssignment();
-  _6testEqualAssignment();
+  TestRunner runner;
 
-  _7testEqualSyntax();
-  _8testLessOperators();
-  _9testGreaterOperators();
-  _10testNotEqualOperator();
-  _11testMixedAssignAndCompare();
+  // Happy Path
+  testKeywordTokens(runner);
+  testIdentifierTokens(runner);
+  testNumberTokens(runner);
+  testAssignmentTokens(runner);
+  testComparisonTokens(runner);
+  testPrintTokens(runner);
+  testI2CTokens(runner);
+  testProgramScenarios(runner);
 
-  std::cout << RESET << passed << " PASSED" << std::endl;
-  std::cout << failed << " FAILED" << std::endl;
+  // Error Path
+  testUnclosedString(runner);
+  testInvalidTokens(runner);
+  testInvalidHex(runner);
+  testInvalidOperators(runner);
+  testBrokenAssignments(runner);
+  testInvalidKeywords(runner);
+  testWeirdSpacing(runner);
+  testEmptyInput(runner);
+  testOnlyGarbage(runner);
 
-  return failed > 0 ? 1 : 0;
+  std::cout << "PASSED: " << runner.passed << kENDL;
+  std::cout << "FAILED: " << runner.failed << kENDL;
+
+  if (!runner.failedMessages.empty())
+  {
+    std::cout << kENDL << RED << "FAILED TESTS:" << RESET << kENDL;
+    for (const auto &msg : runner.failedMessages)
+    {
+      std::cout << RED << msg << RESET << kENDL;
+    }
+  }
+
+  return runner.allPassed() ? 0 : 1;
 }

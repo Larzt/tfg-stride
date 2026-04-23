@@ -2,7 +2,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -D TEST
 
-INCLUDES = -I language/lexer -I utils -I language
+INCLUDES = -I language/lexer -I utils -I consts -I language
 
 LEXER_SRCS = language/lexer/lexer.cc \
              language/lexer/line_lexer.cc
