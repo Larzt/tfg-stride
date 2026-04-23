@@ -29,6 +29,7 @@ jobs:
             main/language/lexer/lexer.cc \
             main/language/lexer/line_lexer.cc \
             -Imain -Imain/language -Imain/utils \
+            -DTEST \
             -o lexer_test
 
       - name: Run tests
