@@ -5,11 +5,12 @@
 
 #include "interpreter.h"
 
-// SD Module
+// SD Module & SPI
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
+#include "driver/spi_master.h"
 
 // Server & Handlers
 #include "server.h"
@@ -18,6 +19,55 @@
 #include "input.h"
 #include "output.h"
 #include "main.h"
+
+#define LGFX_USE_V1
+#include <LovyanGFX.hpp>
+#define TFT_RST 4  // Pin RST
+#define TFT_RS 2   // Pin RS
+#define TFT_CS 15  // Pin CS
+#define TFT_SDI 13 // Data In / MOSI
+#define TFT_CLK 14 // Reloj / SCK
+
+// ============================================================
+// CONFIGURACIÓN DE PANTALLA LOVYANGFX (ILI9225)
+// ============================================================
+class LGFX : public lgfx::LGFX_Device
+{
+    lgfx::Panel_ILI9225 _panel_instance;
+    lgfx::Bus_SPI _bus_instance;
+
+public:
+    LGFX(void)
+    {
+        {
+            auto cfg = _bus_instance.config();
+            cfg.spi_host = SPI3_HOST;  // Usamos el HSPI (aislado de la SD)
+            cfg.spi_mode = 0;          // Modo SPI
+            cfg.freq_write = 10000000; // Velocidad: 10 MHz
+            cfg.pin_sclk = TFT_CLK;    // GPIO 14
+            cfg.pin_mosi = TFT_SDI;    // GPIO 13
+            cfg.pin_miso = -1;         // No usamos MISO en la pantalla
+            cfg.pin_dc = TFT_RS;       // GPIO 2
+            _bus_instance.config(cfg);
+            _panel_instance.setBus(&_bus_instance);
+        }
+        {
+            auto cfg = _panel_instance.config();
+            cfg.pin_cs = TFT_CS;    // GPIO 15
+            cfg.pin_rst = TFT_RST;  // GPIO 4
+            cfg.panel_width = 176;  // Ancho del ILI9225
+            cfg.panel_height = 220; // Alto del ILI9225
+            cfg.offset_x = 0;
+            cfg.offset_y = 0;
+            cfg.bus_shared = false; // No compartimos este bus con nadie más
+            _panel_instance.config(cfg);
+        }
+        setPanel(&_panel_instance);
+    }
+};
+
+// Creamos la instancia global de la pantalla
+LGFX tft;
 
 // TIME
 // #include <time.h>
@@ -29,7 +79,7 @@
 
 #define LED_MODE GPIO_NUM_26
 #define BUTTON_MODE GPIO_NUM_16
-#define BUTTON_RELOAD GPIO_NUM_13
+#define BUTTON_RELOAD GPIO_NUM_32
 
 // Handle solo de la tarea principal
 static TaskHandle_t mainTaskHandle = NULL;
@@ -100,7 +150,8 @@ void button_task(void *pvParameters)
 
             ESP_LOGI("Button", "Modo cambiado");
 
-            while(mode_button.is_pressed()) {
+            while (mode_button.is_pressed())
+            {
                 vTaskDelay(pdMS_TO_TICKS(50));
             }
         }
@@ -230,7 +281,7 @@ void sd_task(void *pvParameters)
         .max_files = 5,
         .allocation_unit_size = 16 * 1024,
         .disk_status_check_enable = true,
-        };
+    };
 
     sdmmc_card_t *card;
 
@@ -276,6 +327,40 @@ void sd_task(void *pvParameters)
 //         ESP_LOGI("TIME", "Hora sincronizada");
 //     }
 // }
+
+enum TFT_DIRECTION {
+    Vertical = 0,
+    Horizontal = 1,
+    InvertedVertical = 2,
+    InvertedHorizontal = 3,
+};
+/* ============================================================
+   TAREA PANTALLA TFT 176x220
+   ============================================================ */
+void tft_task(void *pvParameters)
+{
+    ESP_LOGI("TFT", "Inicializando LovyanGFX...");
+    tft.init();
+
+    ESP_LOGI("TFT", "Init superado. Pintando pantalla de azul...");
+    tft.setRotation(TFT_DIRECTION::Vertical);
+    tft.fillScreen(TFT_BLACK);
+
+    tft.setTextColor(TFT_YELLOW);
+    tft.setTextSize(2);
+    tft.setCursor(10, 80); // x, y
+    tft.println("Bienvenido a");
+    tft.setCursor(50, 100);
+    tft.println("Stride");
+
+    tft.drawLine(0, 120, 176, 120, TFT_GREEN);
+
+    ESP_LOGI("TFT", "Dibujo completado.");
+    while (true)
+    {
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
 
 /* ============================================================
    APP MAIN
@@ -329,6 +414,17 @@ extern "C" void app_main(void)
         4,
         &sdReadTaskHandle,
         1);
+
+    // Tarea Pantalla TFT
+    xTaskCreatePinnedToCore(
+        tft_task,
+        "TFTTask",
+        4096, // Ajusta este tamaño de pila si tu librería gráfica lo necesita
+        NULL,
+        4, // Prioridad
+        NULL,
+        1 // Ejecutando en el Core 1 (junto con la SD y main)
+    );
 
     xTaskCreatePinnedToCore(
         button_reload_task,

@@ -27,5 +27,5 @@ idf_component_register(
 
     REQUIRES esp_http_server esp_wifi driver nvs_flash
 
-    PRIV_REQUIRES fatfs sdmmc spi_flash
+    PRIV_REQUIRES fatfs sdmmc spi_flash LovyanGFX
 )
