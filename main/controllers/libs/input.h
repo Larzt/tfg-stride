@@ -12,6 +12,7 @@ public:
 
   void init() override;
 
+  bool just_pressed();
   bool is_pressed();                     // Pulsación simple (con debounce)
   bool wait_for_long_press(uint32_t ms); // Long press
 
@@ -20,6 +21,7 @@ private:
   bool read_debounced(); // Lectura con antirrebote
 
 private:
+  bool _was_pressed;
   bool _pull_up;             // true = pull-up interno
   bool _is_pressing = false; // estado interno long press
   bool _last_state = false;  // último estado estable

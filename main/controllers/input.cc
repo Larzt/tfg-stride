@@ -51,6 +51,24 @@ bool InputPin::read_debounced()
   return _last_state;
 }
 
+bool InputPin::just_pressed()
+{
+    bool current_state = read_debounced();
+
+    if (current_state && !_was_pressed)
+    {
+        _was_pressed = true;
+        return true;
+    }
+
+    if (!current_state)
+    {
+        _was_pressed = false;
+    }
+
+    return false;
+}
+
 bool InputPin::is_pressed()
 {
   return read_debounced();

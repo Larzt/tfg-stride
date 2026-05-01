@@ -16,58 +16,10 @@
 #include "server.h"
 
 // Controllers
+#include "display.h"
 #include "input.h"
 #include "output.h"
 #include "main.h"
-
-#define LGFX_USE_V1
-#include <LovyanGFX.hpp>
-#define TFT_RST 4  // Pin RST
-#define TFT_RS 2   // Pin RS
-#define TFT_CS 15  // Pin CS
-#define TFT_SDI 13 // Data In / MOSI
-#define TFT_CLK 14 // Reloj / SCK
-
-// ============================================================
-// CONFIGURACIÓN DE PANTALLA LOVYANGFX (ILI9225)
-// ============================================================
-class LGFX : public lgfx::LGFX_Device
-{
-    lgfx::Panel_ILI9225 _panel_instance;
-    lgfx::Bus_SPI _bus_instance;
-
-public:
-    LGFX(void)
-    {
-        {
-            auto cfg = _bus_instance.config();
-            cfg.spi_host = SPI3_HOST;  // Usamos el HSPI (aislado de la SD)
-            cfg.spi_mode = 0;          // Modo SPI
-            cfg.freq_write = 10000000; // Velocidad: 10 MHz
-            cfg.pin_sclk = TFT_CLK;    // GPIO 14
-            cfg.pin_mosi = TFT_SDI;    // GPIO 13
-            cfg.pin_miso = -1;         // No usamos MISO en la pantalla
-            cfg.pin_dc = TFT_RS;       // GPIO 2
-            _bus_instance.config(cfg);
-            _panel_instance.setBus(&_bus_instance);
-        }
-        {
-            auto cfg = _panel_instance.config();
-            cfg.pin_cs = TFT_CS;    // GPIO 15
-            cfg.pin_rst = TFT_RST;  // GPIO 4
-            cfg.panel_width = 176;  // Ancho del ILI9225
-            cfg.panel_height = 220; // Alto del ILI9225
-            cfg.offset_x = 0;
-            cfg.offset_y = 0;
-            cfg.bus_shared = false; // No compartimos este bus con nadie más
-            _panel_instance.config(cfg);
-        }
-        setPanel(&_panel_instance);
-    }
-};
-
-// Creamos la instancia global de la pantalla
-LGFX tft;
 
 // TIME
 // #include <time.h>
@@ -120,42 +72,38 @@ void main_task(void *pvParameters)
 }
 
 /* ============================================================
-   TAREA DEL BOTÓN (solo controla servidor)
+   TAREA DEL BOTÓN (determina el modo del servidor)
    ============================================================ */
 void button_task(void *pvParameters)
 {
     InputPin mode_button(BUTTON_MODE);
     OutputPin mode_led(LED_MODE, true);
-
     mode_button.init();
     mode_led.init();
 
-    ESP_LOGI("SYSTEM", "ButtonTask iniciada");
-
     while (true)
     {
+        auto &display = Display::Instance();
+
         if (mode_button.wait_for_long_press(TIME_PRESSED))
         {
-            ESP_LOGW("Inputs", "Five seconds passed!");
-
             mode_led.toggle();
-
             if (mainTaskHandle != NULL)
             {
-                xTaskNotify(
-                    mainTaskHandle,
-                    mode_led.get(),
-                    eSetValueWithOverwrite);
+                xTaskNotify(mainTaskHandle, mode_led.get(), eSetValueWithOverwrite);
             }
-
-            ESP_LOGI("Button", "Modo cambiado");
-
+            // Esperar a que suelte para no detectar clicks accidentales después
             while (mode_button.is_pressed())
+                vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        else if (mode_button.just_pressed())
+        {
+            if (display.getMode() == DisplayState::FILESYSTEM)
             {
-                vTaskDelay(pdMS_TO_TICKS(50));
+                display.moveSelection(1);
+                ESP_LOGI("Button", "Click corto: Moviendo selector");
             }
         }
-
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
@@ -170,14 +118,29 @@ void button_reload_task(void *pvParameters)
 
     while (true)
     {
+        auto &display = Display::Instance();
+
         if (reloadButton.wait_for_long_press(TIME_PRESSED))
         {
-            ESP_LOGI("BUTTON", "Recargando programa");
+            ESP_LOGI("BUTTON", "Ejecutando archivo seleccionado...");
 
+            // Si el intérprete estaba corriendo algo, lo paramos
             Interpreter::Instance().stop_loop();
+
             if (sdReadTaskHandle != NULL)
             {
-                xTaskNotifyGive(sdReadTaskHandle);
+                xTaskNotifyGive(sdReadTaskHandle); // Despertamos a sd_read_task
+            }
+
+            while (reloadButton.is_pressed())
+                vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        else if (reloadButton.just_pressed())
+        {
+            if (display.getMode() == DisplayState::FILESYSTEM)
+            {
+                display.moveSelection(-1);
+                ESP_LOGI("Button", "Click corto: Moviendo selector");
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -190,6 +153,7 @@ void button_reload_task(void *pvParameters)
 void sd_read_task(void *pvParameters)
 {
     auto &interpreter = Interpreter::Instance();
+    auto &display = Display::Instance();
 
     std::vector<std::vector<Token>> programBuffer;
 
@@ -237,6 +201,7 @@ TAREA SD (INDEPENDIENTE)
 void sd_task(void *pvParameters)
 {
     ESP_LOGI("SD", "Iniciando SD task...");
+    auto &display = Display::Instance();
 
     esp_err_t ret;
 
@@ -294,7 +259,9 @@ void sd_task(void *pvParameters)
         return;
     }
 
+    // display.updateStatus("Cargando archivos...")
     ESP_LOGI("SD", "SD montada correctamente");
+    display.setMode(DisplayState::FILESYSTEM);
 
     if (sdReadTaskHandle != NULL)
     {
@@ -328,40 +295,39 @@ void sd_task(void *pvParameters)
 //     }
 // }
 
-enum TFT_DIRECTION {
-    Vertical = 0,
-    Horizontal = 1,
-    InvertedVertical = 2,
-    InvertedHorizontal = 3,
-};
 /* ============================================================
-   TAREA PANTALLA TFT 176x220
+   TFT Display 176x220
    ============================================================ */
+
 void tft_task(void *pvParameters)
 {
-    ESP_LOGI("TFT", "Inicializando LovyanGFX...");
-    tft.init();
+    auto &display = Display::Instance();
+    display.begin();
+    display.showWelcomeScreen();
 
-    ESP_LOGI("TFT", "Init superado. Pintando pantalla de azul...");
-    tft.setRotation(TFT_DIRECTION::Vertical);
-    tft.fillScreen(TFT_BLACK);
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-    tft.setTextColor(TFT_YELLOW);
-    tft.setTextSize(2);
-    tft.setCursor(10, 80); // x, y
-    tft.println("Bienvenido a");
-    tft.setCursor(50, 100);
-    tft.println("Stride");
-
-    tft.drawLine(0, 120, 176, 120, TFT_GREEN);
-
-    ESP_LOGI("TFT", "Dibujo completado.");
     while (true)
     {
-        vTaskDelay(pdMS_TO_TICKS(100));
+        switch (display.getMode())
+        {
+        case DisplayState::STARTUP:
+            break;
+
+        case DisplayState::CONFIG_AP:
+            break;
+
+        case DisplayState::FILESYSTEM:
+            display.showFilesystem();
+            break;
+
+        case DisplayState::EXECUTING:
+            break;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
-
 /* ============================================================
    APP MAIN
    ============================================================ */
@@ -419,13 +385,13 @@ extern "C" void app_main(void)
     xTaskCreatePinnedToCore(
         tft_task,
         "TFTTask",
-        4096, // Ajusta este tamaño de pila si tu librería gráfica lo necesita
+        4096,
         NULL,
-        4, // Prioridad
+        4,
         NULL,
-        1 // Ejecutando en el Core 1 (junto con la SD y main)
-    );
+        1);
 
+    // Tarea Reload de la app
     xTaskCreatePinnedToCore(
         button_reload_task,
         "ButtonReloadTask",

@@ -12,11 +12,38 @@ SdBrowserHandler::SdBrowserHandler()
   _get_uri.method = HTTP_GET;
   _get_uri.handler = &SdBrowserHandler::get_handler;
   _get_uri.user_ctx = nullptr;
+
+  _create_uri.uri = "/create";
+  _create_uri.method = HTTP_GET;
+  _create_uri.handler = &SdBrowserHandler::create_handler;
+  _create_uri.user_ctx = nullptr;
 }
 
 httpd_uri_t *SdBrowserHandler::get_get_uri()
 {
   return &_get_uri;
+}
+
+httpd_uri_t *SdBrowserHandler::get_post_uri()
+{
+  return &_create_uri;
+}
+
+esp_err_t SdBrowserHandler::create_handler(httpd_req_t *req)
+{
+  FILE *f = fopen("/sdcard/nuevo.str", "w");
+
+  if (!f)
+  {
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Error creando archivo");
+    return ESP_FAIL;
+  }
+
+  fprintf(f, "Unknown");
+  fclose(f);
+
+  httpd_resp_send(req, "Archivo creado", HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
 esp_err_t SdBrowserHandler::get_handler(httpd_req_t *req)
@@ -149,6 +176,7 @@ esp_err_t SdBrowserHandler::get_handler(httpd_req_t *req)
         <div class="container">
             <div class="header">
                 <h2>📁 Explorador SD</h2>
+                <a href="/create" class="btn-action btn-edit">+ Nuevo .str</a>
                 <a href="/" class="btn-back">Volver al Inicio</a>
             </div>
             <table>

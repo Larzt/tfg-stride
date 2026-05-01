@@ -14,6 +14,7 @@ idf_component_register(
     INCLUDE_DIRS
         "."
         "./log"
+        "./display"
         "./language"
         "./language/lexer"
         "./network"

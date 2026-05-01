@@ -1,4 +1,5 @@
 #include "network.h"
+#include "display.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include <string.h>
@@ -10,11 +11,11 @@ int Network::s_retry_num = 0;
 WifiMode Network::_mode = WifiMode::AP;
 OutputPin Network::wifi_led(WIFI_PIN_27);
 
-Network::Network() { }
+Network::Network() {}
 
 // --- Event Handler ---
 void Network::event_handler(void *arg, esp_event_base_t event_base,
-                                int32_t event_id, void *event_data)
+                            int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
@@ -95,6 +96,19 @@ void Network::init()
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+    if (netif != NULL)
+    {
+        esp_netif_get_ip_info(netif, &ip_info);
+        char ip_str[16];
+        snprintf(ip_str, sizeof(ip_str), IPSTR, IP2STR(&ip_info.ip));
+
+        auto &display = Display::Instance();
+        display.setMode(DisplayState::CONFIG_AP);
+        display.showAPInfo(ip_str);
+    }
+
     _mode = start_mode;
     ESP_LOGI(TAG, "Wi-Fi iniciado en modo %s", (_mode == STA) ? "STA" : "AP");
 }
@@ -102,11 +116,20 @@ void Network::init()
 bool Network::load_wifi_credentials(std::string &ssid, std::string &password)
 {
     nvs_handle_t my_handle;
-    if (nvs_open("wifi", NVS_READONLY, &my_handle) != ESP_OK) return false;
+    if (nvs_open("wifi", NVS_READONLY, &my_handle) != ESP_OK)
+        return false;
 
     size_t ssid_len = 0, pass_len = 0;
-    if (nvs_get_str(my_handle, "ssid", NULL, &ssid_len) != ESP_OK) { nvs_close(my_handle); return false; }
-    if (nvs_get_str(my_handle, "password", NULL, &pass_len) != ESP_OK) { nvs_close(my_handle); return false; }
+    if (nvs_get_str(my_handle, "ssid", NULL, &ssid_len) != ESP_OK)
+    {
+        nvs_close(my_handle);
+        return false;
+    }
+    if (nvs_get_str(my_handle, "password", NULL, &pass_len) != ESP_OK)
+    {
+        nvs_close(my_handle);
+        return false;
+    }
 
     char *ssid_buf = new char[ssid_len];
     char *pass_buf = new char[pass_len];
