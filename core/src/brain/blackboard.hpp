@@ -3,8 +3,7 @@
 #include <string>
 #include <driver/gpio.h>
 
-#include "network.h"
-#include "server.h"
+#include "types.hpp"
 
 struct Blackboard
 {
@@ -16,22 +15,29 @@ struct Blackboard
   static inline int MaxNetConnections = 4;
 
   static inline bool IsNetConnected = false;
-  static inline std::string IpAddress = "192.168.4.1";
+  static inline std::string WifiIpAddress = "0.0.0.0";
+  static inline std::string LocalIpAddress = "0.0.0.0";
   static inline int MaxConnectionRetries = 5;
-  static inline NetworkMode NetworkMode = NetworkMode::Access;
+  static inline NetworkMode CurrentNetworkMode = NetworkMode::Access;
   static inline gpio_num_t NetLed = GPIO_NUM_27;
 
   // Server
   static uint16_t inline Port = 80;
-  static inline ServerMode ServerMode = ServerMode::User;
+  static uint16_t inline HeaderLength = 1024;
+  static uint16_t inline MaxHandlers = 12;
+  static inline ServerMode CurrentServerMode = ServerMode::Developer;
 
   // System
+
+  // Handlers
+  static inline gpio_num_t PingLed = GPIO_NUM_25;
 
   // Defaults
   static void Reset()
   {
     IsNetConnected = false;
-    IpAddress = "192.168.4.1";
+    WifiIpAddress = "0.0.0.0";
+    LocalIpAddress = "0.0.0.0";
     MaxConnectionRetries = 5;
     Port = 80;
   }

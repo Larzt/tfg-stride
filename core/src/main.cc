@@ -1,36 +1,20 @@
-
-#include <stdio.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <driver/gpio.h>
-
-#include "stride_logger.h"
-
+#include "stride_logger.hpp"
+#include "network.hpp"
+#include "server.hpp"
 
 extern "C" void app_main(void)
 {
-    gpio_num_t pin = GPIO_NUM_2;
-    gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+  class Network network;
+  network.connect();
 
-    StrideLogger::Log(StrideSubsystem::None, "Iniciando el ESP32");
+  class Server *server = new class Server();
+  server->start_server();
 
-    static uint8_t out_state = 0;
+  StrideLed mode_led(GPIO_NUM_26);
+  mode_led.on();
 
-    while (true)
-    {
-        out_state = !out_state;
-
-        if (out_state)
-        {
-            printf("_ON\n");
-        }
-        else
-        {
-            printf("_OFF\n");
-        }
-
-        gpio_set_level(pin, out_state);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+  while (true)
+  {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
 }

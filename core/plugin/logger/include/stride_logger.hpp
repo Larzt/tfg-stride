@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esp_log.h"
+#include <cstdio>
 
 enum StrideSubsystem
 {
@@ -11,31 +12,34 @@ enum StrideSubsystem
 
 class StrideLogger
 {
-
 public:
   template <typename... Args>
   static void Log(StrideSubsystem sub, const char *format, Args... args)
   {
-    const char *tag = get_tag(sub);
-    esp_log_write(ESP_LOG_INFO, tag, "I (%ld) %s: ", esp_log_timestamp(), tag);
-    esp_log_write(ESP_LOG_INFO, tag, format, args...);
-    esp_log_write(ESP_LOG_INFO, tag, "\n");
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, args...);
+    ESP_LOGI(get_tag(sub), "%s", buffer);
   }
 
   template <typename... Args>
   static void Error(StrideSubsystem sub, const char *format, Args... args)
   {
-    const char *tag = get_tag(sub);
-    esp_log_write(ESP_LOG_ERROR, tag, LOG_COLOR_E "E (%ld) %s: ", esp_log_timestamp(), tag);
-    esp_log_write(ESP_LOG_ERROR, tag, format, args...);
-    esp_log_write(ESP_LOG_ERROR, tag, LOG_RESET_COLOR "\n");
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, args...);
+    ESP_LOGE(get_tag(sub), "%s", buffer);
   }
 
-  // template<typename... Args>
-  // static void Warning(const char* format, Args... args);
+  template <typename... Args>
+  static void Warning(StrideSubsystem sub, const char *format, Args... args)
+  {
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, args...);
+    ESP_LOGW(get_tag(sub), "%s", buffer);
+  }
 
 private:
   StrideLogger() = default;
+
   static constexpr const char *get_tag(StrideSubsystem subsystem)
   {
     switch (subsystem)

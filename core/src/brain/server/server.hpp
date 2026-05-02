@@ -2,30 +2,22 @@
 #include <vector>
 #include "esp_http_server.h"
 
-#include "network.h"
-#include "handler.h"
+#include "network.hpp"
+#include "handler.hpp"
+#include "types.hpp"
 
-enum ServerMode
-{
-  Deverloper,
-  User,
-};
 
 class Server
 {
 
 public:
   Server();
-  ~Server() {};
+  ~Server();
 
-  void start_server();
+  httpd_handle_t start_server();
 
   void add_handler(Handler *handler);
   void reset_handlers();
-
-  inline ServerMode get_server_mode() { return _mode; }
-  inline void set_server_mode(ServerMode mode) { _mode = mode; }
-
 
 private:
   httpd_handle_t _server;
