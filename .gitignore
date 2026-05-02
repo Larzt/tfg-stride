@@ -1,8 +1,16 @@
+docker_build.sh
+
+# Archivos temporales de activación de ESP-IDF
+# Temporales de ESP-IDF
+esp_idf_activate_larzt/
+tmp*
+sdkconfig
+build/
+
 # === ESP-IDF build files ===
 build/
 sdkconfig
 sdkconfig.old
-sdkconfig.defaults
 
 # Bootloader & binaries
 *.bin
@@ -53,3 +61,8 @@ dist/
 
 # Windows
 Thumbs.db
+
+# Constants
+/src/consts/credentials.h
+config.json
+compile_commands.json
