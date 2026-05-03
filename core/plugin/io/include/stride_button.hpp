@@ -1,5 +1,5 @@
 #pragma once
-#include "base.hpp"
+#include "stride_base.hpp"
 
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
@@ -8,8 +8,10 @@
 class StrideButton : public StrideBase
 {
 public:
-  explicit StrideButton(gpio_num_t pin, bool pull_up = true)
-      : StrideBase(pin), _pull_up(pull_up) {}
+  explicit StrideButton(gpio_num_t pin, bool pull_up = true) : StrideBase(pin), _pull_up(pull_up)
+  {
+    start();
+  }
 
   void start() override;
   bool just_pressed();

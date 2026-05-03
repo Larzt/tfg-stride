@@ -1,5 +1,9 @@
 #include "server.hpp"
+
 #include "ping.hpp"
+#include "root.hpp"
+#include "browser.hpp"
+#include "librarie.hpp"
 
 Server::Server() {}
 
@@ -75,7 +79,10 @@ void Server::load_handlers()
   // this->add_handler(new SdBrowserHandler());
   // this->add_handler(new SdReaderHandler());
 
-  if (Blackboard::CurrentServerMode == ServerMode::Developer)
+  this->add_handler(new Root());
+  this->add_handler(new Browser());
+  this->add_handler(new Librarie());
+  if (Blackboard::CurrentServerMode.get() == ServerMode::Developer)
   {
     // this->add_handler(new StatusHandler());
     // this->add_handler(new ConfigHandler());

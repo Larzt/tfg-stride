@@ -8,6 +8,8 @@ idf_component_register(
   INCLUDE_DIRS
   "."
   "types"
+  "tasks"
+  "tasks/include"
   "handler"
   "handler/include"
   "brain"
@@ -15,7 +17,8 @@ idf_component_register(
   "brain/network"
   "brain/server"
 
-  REQUIRES logger io esp_wifi esp_netif esp_event nvs_flash esp_http_server
+  REQUIRES logger io observer
+  REQUIRES esp_wifi esp_netif esp_event nvs_flash esp_http_server
 
   PRIV_REQUIRES esp_driver_gpio driver
 )

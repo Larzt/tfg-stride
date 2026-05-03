@@ -1,5 +1,5 @@
 #pragma once
-#include "base.hpp"
+#include "stride_base.hpp"
 #include "driver/gpio.h"
 
 class StrideLed : public StrideBase
@@ -7,7 +7,9 @@ class StrideLed : public StrideBase
 
 public:
   explicit StrideLed(gpio_num_t pin, bool state = false, bool active_low = false)
-      : StrideBase(pin), _state(state), _active_low(active_low) {}
+      : StrideBase(pin), _state(state), _active_low(active_low) {
+        start();
+      }
 
   void start() override;
 

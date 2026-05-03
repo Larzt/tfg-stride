@@ -2,16 +2,32 @@
 #include "network.hpp"
 #include "server.hpp"
 
+#include "server_task.hpp"
+
 extern "C" void app_main(void)
 {
   class Network network;
   network.connect();
 
-  class Server *server = new class Server();
-  server->start_server();
+  class Server server;
+  server.start_server();
 
-  StrideLed mode_led(GPIO_NUM_26);
-  mode_led.on();
+  StrideLed server_mode_led(GPIO_NUM_26, true);
+  Blackboard::CurrentServerMode.subscribe([&server_mode_led](const auto &mode)
+  {
+    StrideLogger::Log(StrideSubsystem::Server, "Server changed mode");
+    server_mode_led.toggle();
+  });
+
+
+  xTaskCreatePinnedToCore(
+      hear_server_mode_button,
+      "HearServerModeButton",
+      4096,
+      NULL,
+      5,
+      NULL,
+      1);
 
   while (true)
   {
