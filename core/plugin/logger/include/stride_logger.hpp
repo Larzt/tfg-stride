@@ -8,6 +8,8 @@ enum StrideSubsystem
   None,
   Network,
   Server,
+  Card,
+  Interpreter,
 };
 
 class StrideLogger
@@ -45,9 +47,11 @@ private:
     switch (subsystem)
     {
     case StrideSubsystem::Network:
-      return "STRIDE_NET";
+      return "STRIDE_NETWORK";
     case StrideSubsystem::Server:
-      return "STRIDE_SRV";
+      return "STRIDE_SERVER";
+    case StrideSubsystem::Card:
+      return "STRIDE_SDCARD";
     default:
       return "STRIDE";
     }

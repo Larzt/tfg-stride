@@ -20,5 +20,5 @@ idf_component_register(
   REQUIRES logger io observer
   REQUIRES esp_wifi esp_netif esp_event nvs_flash esp_http_server
 
-  PRIV_REQUIRES esp_driver_gpio driver
+  PRIV_REQUIRES esp_driver_gpio driver fatfs sdmmc spi_flash
 )

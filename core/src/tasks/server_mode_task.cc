@@ -1,7 +1,4 @@
-#include "server_task.hpp"
-#include "stride_button.hpp"
-#include "stride_logger.hpp"
-#include "blackboard.hpp"
+#include "server_mode_task.hpp"
 
 void hear_server_mode_button(void *pvParameters)
 {

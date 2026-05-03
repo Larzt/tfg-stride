@@ -32,8 +32,12 @@ struct Blackboard
   static inline StrideObservable<ServerMode> CurrentServerMode{ServerMode::Developer};
 
   // Handlers
+
   // System
+  static inline int ReloadTimePressed = 2000;
+  static inline gpio_num_t ReloadProgramButton = GPIO_NUM_32;
   static inline std::string MountPoint = "/sdcard";
+  static inline std::string CurrentLoadProgram = "program.str";
 
   // Handlers
   static inline gpio_num_t PingLed = GPIO_NUM_25;
