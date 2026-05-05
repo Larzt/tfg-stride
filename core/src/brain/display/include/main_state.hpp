@@ -34,14 +34,21 @@ public:
     }
 
     auto &tft = ctx.getTFT();
+    int32_t width = tft.width();
+    int32_t height = tft.height();
+
     tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_YELLOW);
+    tft.setTextSize(2);
+    tft.drawCenterString("Programas", width / 2, 10);
+    tft.drawCenterString("cargados", width / 2, 30);
+
+    draw_files(ctx);
 
     tft.setTextColor(TFT_YELLOW);
     tft.setTextSize(2);
-    tft.drawCenterString("Programas", tft.width() / 2, 10);
-    tft.drawCenterString("cargados", tft.width() / 2, 30);
-
-    draw_files(ctx);
+    // tft.drawWedgeLine(0, height-30, width, height-30, 1.5, 1.5, TFT_WHITE);
+    tft.drawCenterString(Blackboard::LocalIpAddress.c_str(), width / 2, height - 20);
 
     _cursor_subscription = _cursor_position.subscribe([this, &ctx](int)
                                                       { draw_files(ctx); });
@@ -69,7 +76,7 @@ public:
 
     tft.setTextSize(1);
 
-    int y = 50;
+    int y = 51;
     int lineHeight = 10;
 
     for (size_t i = 0; i < _files.size(); i++)
