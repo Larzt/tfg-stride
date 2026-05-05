@@ -3,7 +3,7 @@
 #include <string>
 #include <driver/gpio.h>
 
-#include "types.hpp"
+#include "enums.hpp"
 #include "stride_observer.hpp"
 
 struct Blackboard
@@ -27,20 +27,24 @@ struct Blackboard
   static uint16_t inline HeaderLength = 1024;
   static uint16_t inline MaxHandlers = 12;
   static inline gpio_num_t ModeLed = GPIO_NUM_27;
-  static inline gpio_num_t ModeButton = GPIO_NUM_16;
   static inline int ModeTimePressed = 5000;
   static inline StrideObservable<ServerMode> CurrentServerMode{ServerMode::Developer};
 
-  // Handlers
+  // Global buttons
+  static inline gpio_num_t LeftButton = GPIO_NUM_32;
+  static inline gpio_num_t RightButton = GPIO_NUM_16;
 
   // System
   static inline int ReloadTimePressed = 2000;
-  static inline gpio_num_t ReloadProgramButton = GPIO_NUM_32;
   static inline std::string MountPoint = "/sdcard";
-  static inline std::string CurrentLoadProgram = "program.str";
+  static inline std::string CurrentLogFile = "/prints.log";
+  static inline StrideObservable<std::string> CurrentLoadProgramFile{"/program.str"};
 
   // Handlers
   static inline gpio_num_t PingLed = GPIO_NUM_25;
+
+  // Display
+  static inline uint32_t LoadingTimeMs = 3000;
 
   // Defaults
   static void Reset()

@@ -3,6 +3,9 @@
 #include "ping.hpp"
 #include "root.hpp"
 #include "browser.hpp"
+#include "editor.hpp"
+#include "view.hpp"
+#include "save.hpp"
 #include "librarie.hpp"
 
 Server::Server() {}
@@ -51,8 +54,7 @@ void Server::reset_handlers()
     {
       if (httpd_register_uri_handler(_server, uri) != ESP_OK)
       {
-        StrideLogger::Error(StrideSubsystem::Server,
-                            "Error registering URI");
+        StrideLogger::Error(StrideSubsystem::Server, "Error registering URI");
       }
     }
   }
@@ -70,23 +72,22 @@ void Server::reset_handlers()
 
 void Server::load_handlers()
 {
-  // this->add_handler(new RootHandler());
-
-  // This should be avaible only if there is no wifi connection or is in dev mode
-  // this->add_handler(new WifiConfigHandler());
-
-  // this->add_handler(new SdEditorHandler());
-  // this->add_handler(new SdBrowserHandler());
-  // this->add_handler(new SdReaderHandler());
 
   this->add_handler(new Root());
   this->add_handler(new Browser());
+  this->add_handler(new Editor());
+  this->add_handler(new View());
+  this->add_handler(new Save());
   this->add_handler(new Librarie());
   if (Blackboard::CurrentServerMode.get() == ServerMode::Developer)
   {
+    // The first time you turn on the device, it will be in developer mode; once you've set up the Wi-Fi, switch to user mode so that this handler cannot be accessed.
+    // this->add_handler(new WifiConfigHandler());
+
+    this->add_handler(new Ping());
+
     // this->add_handler(new StatusHandler());
     // this->add_handler(new ConfigHandler());
-    this->add_handler(new Ping());
   }
 }
 

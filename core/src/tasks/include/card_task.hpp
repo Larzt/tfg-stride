@@ -7,6 +7,9 @@
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
+#include "freertos/task.h"
 
-void open_card(void *pvParameters);
-void read_card(void *pvParameters);
+extern TaskHandle_t sdReadTaskHandle;
+
+void open_card_task(void *pvParameters);
+void read_card_task(void *pvParameters);

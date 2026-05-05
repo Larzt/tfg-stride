@@ -1,6 +1,6 @@
 #include "card_task.hpp"
 
-void open_card(void *pvParameters)
+void open_card_task(void *pvParameters)
 {
   StrideLogger::Log(StrideSubsystem::Card, "Initializing sd-card module");
 
@@ -59,10 +59,10 @@ void open_card(void *pvParameters)
 
   StrideLogger::Log(StrideSubsystem::Card, "SD mounted correctly");
 
-  // if (sdReadTaskHandle != NULL)
-  // {
-  //   xTaskNotifyGive(sdReadTaskHandle);
-  // }
+  if (sdReadTaskHandle != NULL)
+  {
+    xTaskNotifyGive(sdReadTaskHandle);
+  }
 
   vTaskDelete(NULL);
 }

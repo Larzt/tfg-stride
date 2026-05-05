@@ -6,7 +6,7 @@
 #include "stride_led.hpp"
 #include "stride_logger.hpp"
 #include "blackboard.hpp"
-#include "types.hpp"
+#include "enums.hpp"
 
 
 class Network

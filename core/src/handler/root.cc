@@ -4,25 +4,25 @@
 
 Root::Root()
 {
-  _root_uri = {
-      .uri = "/",
-      .method = HTTP_GET,
-      .handler = &Root::handler,
-      .user_ctx = this};
+    _root_uri = {
+        .uri = "/",
+        .method = HTTP_GET,
+        .handler = &Root::handler,
+        .user_ctx = this};
 
-  _uris = {&_root_uri};
+    _uris = {&_root_uri};
 }
 
 const std::vector<httpd_uri_t *> &Root::uris() const
 {
-  return _uris;
+    return _uris;
 }
 
 esp_err_t Root::handler(httpd_req_t *req)
 {
-  const std::string kENDL = "\n";
+    const std::string kENDL = "\n";
 
-  std::string html = R"rawliteral(
+    std::string html = R"rawliteral(
     <!DOCTYPE html>
     <html lang="es">
     <head>
@@ -159,14 +159,65 @@ esp_err_t Root::handler(httpd_req_t *req)
     window.onload = () => {
       loadPage('/browser');
     }
+
+    function createFile() {
+        fetch('/create')
+            .then(() => loadPage('/browser'));
+    }
+
+    function editFile(file) {
+        loadPage('/editor?file=' + encodeURIComponent(file));
+    }
+
+    function viewFile(file) {
+        loadPage('/view?file=' + encodeURIComponent(file));
+    }
+
+    function loadPage(url) {
+        fetch(url)
+        .then(res => {
+            if (!res.ok) throw new Error("Error");
+            return res.text();
+        })
+        .then(html => {
+            document.getElementById("content").innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById("content").innerHTML =
+                "<div class='card'><h2>Error cargando la página</h2></div>";
+        });
+    }
+    function saveFile(file) {
+        const content = document.getElementById("editor").value;
+
+        fetch('/save?file=' + encodeURIComponent(file), {
+            method: 'POST',
+            body: content,
+            headers: {
+                "Content-Type": "text/plain"
+            }
+        })
+        .then(res => {
+            console.log("STATUS:", res.status);
+            return res.text();
+        })
+        .then(text => {
+            console.log("RESPONSE:", text);
+            alert("Guardado OK");
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error al guardar");
+        });
+    }
     </script>
 
     </body>
     </html>
     )rawliteral";
 
-  httpd_resp_set_type(req, "text/html");
-  httpd_resp_send(req, html.c_str(), html.length());
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, html.c_str(), html.length());
 
-  return ESP_OK;
+    return ESP_OK;
 }

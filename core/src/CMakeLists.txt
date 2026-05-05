@@ -9,16 +9,21 @@ idf_component_register(
   "."
   "types"
   "tasks"
+  "utils"
+  "utils/sink"
+  "utils/hexer"
   "tasks/include"
   "handler"
   "handler/include"
   "brain"
-  "brain/machine"
+  "brain/interpreter"
   "brain/network"
   "brain/server"
+  "brain/display"
+  "brain/display/include"
 
-  REQUIRES logger io observer
+  REQUIRES logger io observer lexer
   REQUIRES esp_wifi esp_netif esp_event nvs_flash esp_http_server
 
-  PRIV_REQUIRES esp_driver_gpio driver fatfs sdmmc spi_flash
+  PRIV_REQUIRES esp_driver_gpio driver fatfs sdmmc spi_flash LovyanGFX
 )

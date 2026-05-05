@@ -4,7 +4,7 @@
 
 #include "network.hpp"
 #include "handler.hpp"
-#include "types.hpp"
+#include "enums.hpp"
 
 
 class Server

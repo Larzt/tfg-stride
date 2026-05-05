@@ -2,7 +2,7 @@
 CXX = g++
 
 # Banderas de compilación: C++23 e incluimos las carpetas de headers
-CXXFLAGS = -Wall -Wextra -std=c++2b -I../language/lexer/include -Iinclude -g
+CXXFLAGS = -Wall -Wextra -std=c++2b -I../plugin/lexer/include -Iinclude -g
 
 # LDFLAGS = -lgtest -lgtest_main -pthread
 
@@ -10,7 +10,7 @@ CXXFLAGS = -Wall -Wextra -std=c++2b -I../language/lexer/include -Iinclude -g
 TARGET = run_tests
 
 # 1. Buscamos el código de producción
-SRCS_LANG = $(wildcard ../language/lexer/*.cc)
+SRCS_LANG = $(wildcard ../plugin/lexer/*.cc)
 
 # 2. Buscamos los archivos de test
 SRCS_TESTS = $(wildcard *.cc)

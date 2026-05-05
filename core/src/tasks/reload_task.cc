@@ -1,8 +1,9 @@
 #include "reload_task.hpp"
 
-void hear_program_reload_button(void *pvParameters)
+
+void hear_program_reload_button_task(void *pvParameters)
 {
-  StrideButton button(Blackboard::ReloadProgramButton);
+  StrideButton button(Blackboard::LeftButton);
 
   while (true)
   {
@@ -10,12 +11,12 @@ void hear_program_reload_button(void *pvParameters)
     {
       StrideLogger::Log(StrideSubsystem::Interpreter, "Loading selected program...");
 
-      // Interpreter::Instance().stop_loop();
+      Interpreter::Instance().stop_endless_loop();
 
-      // if (sdReadTaskHandle != NULL)
-      // {
-      //   xTaskNotifyGive(sdReadTaskHandle);
-      // }
+      if (sdReadTaskHandle != NULL)
+      {
+        xTaskNotifyGive(sdReadTaskHandle);
+      }
 
       while (button.is_pressed())
       {

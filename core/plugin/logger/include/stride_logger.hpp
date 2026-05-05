@@ -10,6 +10,7 @@ enum StrideSubsystem
   Server,
   Card,
   Interpreter,
+  Screen,
 };
 
 class StrideLogger

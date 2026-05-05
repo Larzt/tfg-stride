@@ -1,4 +1,6 @@
 #pragma once
+#include "stride_subscription.hpp"
+
 #include <vector>
 #include <functional>
 
@@ -10,9 +12,15 @@ public:
 
   explicit StrideObservable(T initial_value) : _value(initial_value) {}
 
-  void subscribe(Callback callback)
+  StrideSubscription subscribe(Callback callback)
   {
     _callbacks.push_back(callback);
+    auto it = std::prev(_callbacks.end());
+
+    return StrideSubscription([this, it]()
+    {
+      _callbacks.erase(it);
+    });
   }
 
   void set(const T &new_value)
@@ -24,10 +32,7 @@ public:
     }
   }
 
-  T get() const
-  {
-    return _value;
-  }
+  T get() const { return _value; }
 
   StrideObservable &operator=(const T &new_value)
   {

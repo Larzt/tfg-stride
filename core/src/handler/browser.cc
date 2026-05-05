@@ -88,36 +88,6 @@ esp_err_t Browser::handler(httpd_req_t *req)
         </tbody>
     </table>
 </div>
-
-<script>
-function createFile() {
-    fetch('/create')
-        .then(() => loadPage('/browser'));
-}
-
-function editFile(file) {
-    loadPage('/editor?file=' + file);
-}
-
-function viewFile(file) {
-    loadPage('/view?file=' + file);
-}
-
-function loadPage(url) {
-    fetch(url)
-    .then(res => {
-        if (!res.ok) throw new Error("Error");
-        return res.text();
-    })
-    .then(html => {
-        document.getElementById("content").innerHTML = html;
-    })
-    .catch(() => {
-        document.getElementById("content").innerHTML =
-            "<div class='card'><h2>Error cargando la página</h2></div>";
-    });
-}
-</script>
 )rawliteral";
 
   httpd_resp_set_type(req, "text/html");

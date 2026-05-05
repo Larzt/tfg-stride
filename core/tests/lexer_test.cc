@@ -144,28 +144,27 @@ void testProgramScenarios(TestRunner &runner)
 {
   runner.setTest("Test Program Scenarios");
 
-  std::string line = "device=led name=myLed pin=16\n\
-write=myLed ON\n\
-if myLed == on\n\
-write=myLed OFF\n\
+  // El string original tiene 23-24 tokens dependiendo de cómo manejes los saltos de línea.
+  std::string line = "device=led name=mL pin=17\n\
+device=button name=mB pin=35\n\
+loop -1\n\
+if mB == 1\n\
+write=mL on\n\
+else\n\
+write=mL off\n\
 endif\n\
-print myLed";
+dloop";
 
   auto tokens = tokenize(line);
-
   check(runner, tokens.size() > 0, true, "non empty");
-
   check_token(runner, tokens[0], TokenType::DEVICE, "device", "first token");
-  check_token(runner, tokens[2], TokenType::LED, "led", "led");
-
-  check_token(runner, tokens[9], TokenType::WRITE, "write", "write");
-  check_token(runner, tokens[13], TokenType::IF, "if", "if");
-
-  check_token(runner, tokens[15], TokenType::IS_EQUAL, "==", "==");
-  check_token(runner, tokens[21], TokenType::ENDIF, "endif", "endif");
-
-  check_token(runner, tokens[22], TokenType::PRINT, "print", "print");
-  check_token(runner, tokens.back(), TokenType::IDENTIFIER, "myLed", "myLed identifier");
+  check_token(runner, tokens[2], TokenType::LED, "led", "led type");
+  check_token(runner, tokens[18], TokenType::LOOP, "loop", "loop keyword");
+  check_token(runner, tokens[20], TokenType::IF, "if", "if keyword");
+  check_token(runner, tokens[22], TokenType::IS_EQUAL, "==", "equal operator");
+  check_token(runner, tokens[24], TokenType::WRITE, "write", "write command");
+  check_token(runner, tokens[33], TokenType::ENDIF, "endif", "endif keyword");
+  check_token(runner, tokens.back(), TokenType::DLOOP, "dloop", "dloop at the end");
 }
 
 // -----------------------------------------------------

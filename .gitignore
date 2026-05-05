@@ -66,3 +66,6 @@ Thumbs.db
 /src/consts/credentials.h
 config.json
 compile_commands.json
+
+# Tests
+*.o
