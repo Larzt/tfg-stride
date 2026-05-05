@@ -15,7 +15,6 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"read", TokenType::READ},
     {"print", TokenType::PRINT},
 
-    // FLOW CONTROL
     {"if", TokenType::IF},
     {"else", TokenType::ELSE},
     {"endif", TokenType::ENDIF},
@@ -23,13 +22,11 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"dloop", TokenType::DLOOP},
     {"wait", TokenType::WAIT},
 
-    // I2C
     {"i2c", TokenType::I2C},
     {"init", TokenType::INIT},
     {"sda", TokenType::SDA},
     {"scl", TokenType::SCL},
 
-    // OTHERS
     {"->", TokenType::ARROW},
     {"=", TokenType::ASSIGN},
     {"on", TokenType::VALUE},
@@ -56,7 +53,7 @@ std::vector<Token> Liner::process()
       flush_word();
       consume_string();
     }
-    // --- SÍMBOLOS DE 2 CARACTERES ---
+
     else if (current_char == '-' && next_char == '>')
     {
       flush_word();
@@ -70,8 +67,7 @@ std::vector<Token> Liner::process()
 
       if (third_char == '=')
       {
-        // Caso "===" invalido.
-        // Consumimos todos los '=' seguidos para marcarlos como UNKNOWN
+
         std::string invalid_op = "==";
         cursor += 2;
         while (cursor < source.length() && source[cursor] == '=')
@@ -105,11 +101,11 @@ std::vector<Token> Liner::process()
       tokens.emplace_back(TokenType::GREATER_EQUAL, ">=");
       cursor += 2;
     }
-    // --- SÍMBOLOS DE 1 CARÁCTER ---
+
     else if (current_char == '=')
     {
       flush_word();
-      tokens.emplace_back(TokenType::ASSIGN, "="); // Asignación
+      tokens.emplace_back(TokenType::ASSIGN, "=");
       cursor++;
     }
     else if (current_char == '<')
@@ -124,7 +120,7 @@ std::vector<Token> Liner::process()
       tokens.emplace_back(TokenType::GREATER_THAN, ">");
       cursor++;
     }
-    // --- TEXTO / NÚMEROS ---
+
     else
     {
       current_word += current_char;
@@ -147,7 +143,7 @@ char Liner::peek_next() const
 
 void Liner::consume_string()
 {
-  cursor++; // Saltamos la comilla de apertura (")
+  cursor++;
   std::string literal = "";
   bool closed = false;
 
@@ -156,7 +152,7 @@ void Liner::consume_string()
     if (source[cursor] == '"')
     {
       closed = true;
-      break; // Encontramos la comilla de cierre
+      break;
     }
     literal += source[cursor];
     cursor++;
@@ -165,12 +161,11 @@ void Liner::consume_string()
   if (closed)
   {
     tokens.emplace_back(TokenType::STRING, literal);
-    cursor++; // Saltamos la comilla de cierre (")
+    cursor++;
   }
   else
   {
-    // ERROR: El string se quedó abierto al final de la línea/archivo
-    // Lo marcamos como UNKNOWN
+
     tokens.emplace_back(TokenType::UNKNOWN, "\"" + literal);
   }
 }
@@ -191,30 +186,25 @@ Token Liner::generate_word_token(const std::string &word) const
   std::string lower = word;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
-  // Comprobar palabras clave
   auto it = keywords.find(lower);
   if (it != keywords.end())
   {
     return Token(it->second, word);
   }
 
-  // Comprobar Hexadecimal
   if (word.size() > 2 && word[0] == '0' && (word[1] == 'x' || word[1] == 'X'))
   {
     bool is_hex = std::all_of(word.begin() + 2, word.end(), [](unsigned char c)
-                             { return std::isxdigit(c); });
+                              { return std::isxdigit(c); });
     if (is_hex)
       return Token(TokenType::HEX_NUMBER, word);
   }
 
-  // Comprobar Decimal
   if (std::all_of(word.begin(), word.end(), ::isdigit))
   {
     return Token(TokenType::NUMBER, word);
   }
 
-  // Comprobar si es un IDENTIFICADOR VÁLIDO
-  // Debe empezar por letra o '_'
   if (!word.empty() && (std::isalpha(word[0]) || word[0] == '_'))
   {
     bool validId = std::all_of(word.begin() + 1, word.end(), [](unsigned char c)

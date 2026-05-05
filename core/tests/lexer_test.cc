@@ -144,7 +144,6 @@ void testProgramScenarios(TestRunner &runner)
 {
   runner.setTest("Test Program Scenarios");
 
-  // El string original tiene 23-24 tokens dependiendo de cómo manejes los saltos de línea.
   std::string line = "device=led name=mL pin=17\n\
 device=button name=mB pin=35\n\
 loop -1\n\
