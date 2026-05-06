@@ -6,9 +6,12 @@
 #include "reload_task.hpp"
 #include "card_task.hpp"
 #include "display_task.hpp"
+#include "i2c_task.hpp"
 
 extern "C" void app_main(void)
 {
+    ESP_ERROR_CHECK(i2c_master_init());
+
     class Network network;
     network.connect();
 
@@ -65,6 +68,15 @@ extern "C" void app_main(void)
         5,
         &sdReadTaskHandle,
         1);
+
+    xTaskCreatePinnedToCore(
+        pcf8574_task,
+        "Expand",
+        4096,
+        NULL,
+        5,
+        &sdReadTaskHandle,
+        0);
 
     while (true)
     {

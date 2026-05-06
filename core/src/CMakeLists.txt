@@ -16,6 +16,7 @@ idf_component_register(
   "handler"
   "handler/include"
   "brain"
+  "brain/expander"
   "brain/interpreter"
   "brain/network"
   "brain/server"
